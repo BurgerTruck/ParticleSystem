@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="ParticleSystem:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/ParticleSystem_jar</output-path>
+    <root id="archive" name="ParticleSystem.jar">
+      <element id="module-output" name="ParticleSystem" />
+    </root>
+  </artifact>
+</component>
