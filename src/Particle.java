@@ -7,6 +7,8 @@ public class Particle {
     double angle;
 
 
+
+
 //    private long lastMoved = -1;
     private double dx;
     private double dy;
@@ -24,7 +26,6 @@ public class Particle {
 
     public Position getNextPosition(double timePassed){
         return new Position(p.x+dx*timePassed, p.y+dy*timePassed);
-
     }
 
     public void move(ArrayList<Wall> walls, double timePassed){
@@ -35,11 +36,16 @@ public class Particle {
 //        lastMoved = time;
         Position next = getNextPosition(timePassed)  ;
         //TODO: check collision
-
+        if(next.x < 0 || next.x > GUI.canvasWidth){
+            dx = -dx;
+        }
+        if(next.y < 0 || next.y > GUI.canvasHeight){
+            dy = -dy;
+        }
 
         Position temp = p;
         p = next;
-
+        System.out.println("Next pos: " + next);
 
         prev = temp;
 

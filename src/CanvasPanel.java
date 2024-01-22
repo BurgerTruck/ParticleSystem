@@ -51,6 +51,7 @@ public class CanvasPanel extends JPanel implements ActionListener {
 
     public void addParticle(Particle p){
         particles.add(p);
+//{
 //        Thread thread = new Thread(() -> {
 //            while(true){
 //                p.move(walls);
