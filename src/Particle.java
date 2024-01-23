@@ -8,7 +8,6 @@ public class Particle {
 
 
 
-
 //    private long lastMoved = -1;
     private double dx;
     private double dy;
@@ -34,20 +33,39 @@ public class Particle {
 //        double elapsed = (time - lastMoved)/1000000000d;
 //        System.out.println(elapsed);
 //        lastMoved = time;
-        Position next = getNextPosition(timePassed)  ;
-        //TODO: check collision
-        if(next.x < 0 || next.x > GUI.canvasWidth){
+        Position next = getNextPosition(timePassed);
+        boolean collidedWithWall = false;
+
+
+        for(Wall wall : walls){
+            if(wall.checkIntersect(p, next)){
+
+                Position wallNormal = wall.getPerpendicularVector();
+
+                double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
+                // it goes boink
+
+                dx = dx - 2 * dotProduct * wallNormal.x;
+                dy = dy - 2 * dotProduct * wallNormal.y;
+                break;
+            }
+        }
+
+        if (next.x < 0 || next.x > GUI.canvasWidth) {
             dx = -dx;
         }
-        if(next.y < 0 || next.y > GUI.canvasHeight){
+
+        if ( next.y < 0 || next.y > GUI.canvasHeight) {
             dy = -dy;
         }
 
-        Position temp = p;
-        p = next;
-        System.out.println("Next pos: " + next);
 
-        prev = temp;
+        // Update position
+        p = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
+        prev = p;
+
+        System.out.println("Next pos: " + next);
+        System.out.println("Wall count: " + walls.size());
 
     }
 }
