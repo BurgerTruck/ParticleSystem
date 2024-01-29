@@ -35,37 +35,11 @@ public class Particle {
 //        lastMoved = time;
         Position next = getNextPosition(timePassed);
         Position temp = p;
-        boolean collided = true;
+//        boolean collided = false;
 
-//        while (true) {
-//            boolean collided = false;
-//
-//            for (Wall wall : walls) {
-//
-//                if (wall.hasIntersect(temp, next)) {
-//                    collided = true;
-//                    Position wallNormal = wall.getPerpendicularVector();
-//                    double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
-//
-//                    // Reflect the direction
-//                    dx -= 2 * dotProduct * wallNormal.x;
-//                    dy -= 2 * dotProduct * wallNormal.y;
-//
-//                    // Update the next position based on the adjusted direction
-//                    next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
-//                }
-//            }
-//
-//            // If no collisions occurred, exit the loop
-//            if (!collided) {
-//                break;
-//            }
-//        }
-
-
-        for(Wall wall : walls) {
-            if(wall.checkIntersect(temp, next)) {
-
+        boolean collided = false;
+        for (Wall wall : walls) {
+            if (wall.doIntersect(temp, next, wall.p1, wall.p2)) {
                 Position wallNormal = wall.getPerpendicularVector();
                 double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
 
@@ -73,24 +47,29 @@ public class Particle {
                 dx -= 2 * dotProduct * wallNormal.x;
                 dy -= 2 * dotProduct * wallNormal.y;
 
-
+                // Update the next position based on the adjusted direction
                 next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
+                collided = true;
             }
         }
-
 
 
         // Reflect direction if hitting canvas borders
         if (next.x < 0 || next.x > GUI.canvasWidth) {
             dx = -dx;
+            collided = true;
         }
         if (next.y < 0 || next.y > GUI.canvasHeight) {
             dy = -dy;
+            collided = true;
         }
 
-        // Update position if no collision occurred
-        p = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
-        prev = p;
+        // only update the position of no collision has occurred
+        if(!collided){
+            p = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
+            prev = p;
+        }
+
 
         System.out.println("Next pos: " + next);
         System.out.println("Wall count: " + walls.size());
