@@ -15,7 +15,7 @@ public class CanvasPanel extends JPanel implements ActionListener {
     long prev = -1;
 
     int frames = 0;
-    boolean playing = false;
+    boolean playing = true;
     boolean stepPressed = false;
     Timer timer;
     public CanvasPanel(int width, int height){
