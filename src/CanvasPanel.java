@@ -1,10 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.util.ArrayList;
 
 public class CanvasPanel extends JPanel implements ActionListener {
@@ -18,6 +15,9 @@ public class CanvasPanel extends JPanel implements ActionListener {
     long prev = -1;
 
     int frames = 0;
+    boolean playing = false;
+    boolean stepPressed = false;
+    Timer timer;
     public CanvasPanel(int width, int height){
         super(true);
         Dimension d = new Dimension(width, height);
@@ -37,8 +37,9 @@ public class CanvasPanel extends JPanel implements ActionListener {
 
         particles = new ArrayList<>();
         walls = new ArrayList<>();
-        new Timer(1, this).start();
 
+        timer = new Timer(1, this);
+        timer.start();
         new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -90,32 +91,40 @@ public class CanvasPanel extends JPanel implements ActionListener {
         repaint();
     }
 
-
+    private void toggleTimer(){
+        playing = !playing;
+    }
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-        long curr = System.nanoTime();
-        double elapsed = prev==-1?(1d/144d):(curr-prev)/1000000000d;
-//        System.out.println(elapsed);
-        prev = curr;
-        Graphics2D g2 = (Graphics2D)    g;
+        Graphics2D g2 = (Graphics2D) g;
         g2.setStroke(new BasicStroke(3));
         g2.setColor(Color.BLACK);
-        for(int i = 0; i < NUM_THREADS; i++){
-            int finalI = i;
-            threads[i] = new Thread(() -> {
-                for(int j = finalI; j < particles.size(); j+=NUM_THREADS){
-                    particles.get(j).move(walls, elapsed);
-                }
-            }) ;
-            threads[i].start();
-        }
-        for(Thread thread:threads){
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+
+        if(playing  || stepPressed) {
+            long curr = System.nanoTime();
+            double elapsed = prev == -1 || stepPressed ? (1d / 144d) : (curr - prev) / 1000000000d;
+//        System.out.println(elapsed);
+            prev = curr;
+
+
+            for (int i = 0; i < NUM_THREADS; i++) {
+                int finalI = i;
+                threads[i] = new Thread(() -> {
+                    for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
+                        particles.get(j).move(walls, elapsed);
+                    }
+                });
+                threads[i].start();
             }
+            for (Thread thread : threads) {
+                try {
+                    thread.join();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            stepPressed = false;
         }
         for(Particle p: particles)drawPoint(g2, p);
         for(Wall w: walls)drawWall(g2, w);
@@ -135,6 +144,7 @@ public class CanvasPanel extends JPanel implements ActionListener {
     private Point  clicked = null;
 
     private void initializeListeners(){
+
         addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -143,6 +153,7 @@ public class CanvasPanel extends JPanel implements ActionListener {
 
             @Override
             public void mousePressed(MouseEvent e) {
+                requestFocus();
                 Point mouse = e.getLocationOnScreen();
                 SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
                 clicked = new Point(mouse.getLocation().x,  mouse.getLocation().y);
@@ -182,5 +193,35 @@ public class CanvasPanel extends JPanel implements ActionListener {
 
             }
         });
+
+
+        addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                System.out.println("KEY PRESSED");
+                if(e.getKeyCode()==KeyEvent.VK_SPACE){
+                    toggleTimer();
+                    System.out.println("SPACE PRESED");
+                    prev = System.nanoTime();
+                }
+                else if(e.getKeyCode()==KeyEvent.VK_RIGHT){
+                    stepPressed = true;
+                    actionPerformed(null);
+
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                System.out.println("KEY RELEEASED");
+            }
+        });
     }
+
+
 }
