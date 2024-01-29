@@ -3,8 +3,8 @@ import java.awt.*;
 
 
 public class GUI extends JFrame {
-    public static int canvasWidth = 1080;
-    public static int canvasHeight = 1080;
+    public static int canvasWidth = 1280;
+    public static int canvasHeight = 720;
 
     private JPanel addPointPanel;
     private JPanel addWallPanel;

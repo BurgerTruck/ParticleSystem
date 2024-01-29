@@ -34,38 +34,65 @@ public class Particle {
 //        System.out.println(elapsed);
 //        lastMoved = time;
         Position next = getNextPosition(timePassed);
-        boolean collidedWithWall = false;
+        Position temp = p;
+        boolean collided = true;
+
+//        while (true) {
+//            boolean collided = false;
+//
+//            for (Wall wall : walls) {
+//
+//                if (wall.hasIntersect(temp, next)) {
+//                    collided = true;
+//                    Position wallNormal = wall.getPerpendicularVector();
+//                    double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
+//
+//                    // Reflect the direction
+//                    dx -= 2 * dotProduct * wallNormal.x;
+//                    dy -= 2 * dotProduct * wallNormal.y;
+//
+//                    // Update the next position based on the adjusted direction
+//                    next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
+//                }
+//            }
+//
+//            // If no collisions occurred, exit the loop
+//            if (!collided) {
+//                break;
+//            }
+//        }
 
 
-        for(Wall wall : walls){
-            if(wall.checkIntersect(p, next)){
+        for(Wall wall : walls) {
+            if(wall.checkIntersect(temp, next)) {
 
                 Position wallNormal = wall.getPerpendicularVector();
-
                 double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
-                // it goes boink
 
-                dx = dx - 2 * dotProduct * wallNormal.x;
-                dy = dy - 2 * dotProduct * wallNormal.y;
-                break;
+                // Reflect the direction
+                dx -= 2 * dotProduct * wallNormal.x;
+                dy -= 2 * dotProduct * wallNormal.y;
+
+
+                next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
             }
         }
 
+
+
+        // Reflect direction if hitting canvas borders
         if (next.x < 0 || next.x > GUI.canvasWidth) {
             dx = -dx;
         }
-
-        if ( next.y < 0 || next.y > GUI.canvasHeight) {
+        if (next.y < 0 || next.y > GUI.canvasHeight) {
             dy = -dy;
         }
 
-
-        // Update position
+        // Update position if no collision occurred
         p = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
         prev = p;
 
         System.out.println("Next pos: " + next);
         System.out.println("Wall count: " + walls.size());
-
     }
 }
