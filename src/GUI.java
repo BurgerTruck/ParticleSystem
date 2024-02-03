@@ -1,4 +1,5 @@
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import java.awt.*;
 
 
@@ -8,6 +9,7 @@ public class GUI extends JFrame {
 
     private JPanel addPointPanel;
     private JPanel addWallPanel;
+    private JPanel addBatchPanel;
     private CanvasPanel canvas;
 
     public GUI(){
@@ -18,6 +20,7 @@ public class GUI extends JFrame {
         canvas = new CanvasPanel(canvasWidth, canvasHeight);
         initPointPanel();
         initWallPanel();
+        initBatchPanel();
 
         JPanel sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
@@ -26,7 +29,8 @@ public class GUI extends JFrame {
         sidePanel.add(addPointPanel);
         sidePanel.add(Box.createVerticalStrut(20));
         sidePanel.add(addWallPanel);
-        sidePanel.setBorder(BorderFactory.createLineBorder(Color.RED));
+        sidePanel.add(Box.createVerticalStrut(20));
+        sidePanel.add(addBatchPanel);
 
 
         JPanel mainPanel = new JPanel();
@@ -46,34 +50,22 @@ public class GUI extends JFrame {
         addPointPanel = new JPanel();
         addPointPanel.setLayout(new BoxLayout(addPointPanel, BoxLayout.Y_AXIS));
 
-        JPanel coordinatesPanel = new JPanel();
-        coordinatesPanel.setLayout(new BoxLayout(coordinatesPanel, BoxLayout.X_AXIS));
+        InputPanel coordinatesPanel = new InputPanel();
+        InputPanel velocityPanel = new InputPanel();
 
-        JPanel velocityPanel = new JPanel();
-        velocityPanel.setLayout(new BoxLayout(velocityPanel, BoxLayout.X_AXIS));
+        InputField xField = coordinatesPanel.addInput(new InputField("X")) ;
+        InputField yField = coordinatesPanel.addInput(new InputField("Y")) ;
 
-        InputField xField = new InputField("X");
-        InputField yField = new InputField("Y");
-        coordinatesPanel.add(xField);
-        coordinatesPanel.add(yField);
+        InputField speedField = velocityPanel.addInput(new InputField("v")) ;
+        InputField angleField = velocityPanel.addInput(new InputField("θ")) ;
 
-        InputField speedField = new InputField("Speed");
-        InputField angleField = new InputField("Angle");
-        velocityPanel.add(speedField);
-        velocityPanel.add(angleField);
-
-        JButton confirmButton = new JButton("Add Point");
+        JButton confirmButton = new JButton("Confirm");
 
         addPointPanel.add(coordinatesPanel);
         addPointPanel.add(velocityPanel);
         addPointPanel.add(confirmButton);
-
-//        addPointPanel.setBorder(BorderFactory.createLineBorder(Color.RED));
-
-        coordinatesPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        velocityPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         confirmButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-
+        addPointPanel.add(Box.createVerticalStrut(5));
         confirmButton.addActionListener(e -> {
             double  x = Double.parseDouble(xField.getInput());
             double y = Double.parseDouble(yField.getInput());
@@ -81,40 +73,31 @@ public class GUI extends JFrame {
             double angle = Double.parseDouble(angleField.getInput());
             Particle particle = new Particle(new Position(x,y), speed, angle);
             canvas.addParticle(particle);
-//            System.out.println("ADDED PARTICLE?");
         });
+        addPointPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Particle"));
+
+
     }
 
     private void initWallPanel(){
         addWallPanel = new JPanel();
         addWallPanel.setLayout(new BoxLayout(addWallPanel, BoxLayout.Y_AXIS));
 
-        JPanel coordinatesPanel1 = new JPanel();
-        coordinatesPanel1.setLayout(new BoxLayout(coordinatesPanel1, BoxLayout.X_AXIS));
+        InputPanel coordinatesPanel1 = new InputPanel();
+        InputPanel coordinatesPanel2 = new InputPanel();
 
-        JPanel coordinatesPanel2 = new JPanel();
-        coordinatesPanel2.setLayout(new BoxLayout(coordinatesPanel2, BoxLayout.X_AXIS));
+        InputField x1Field = coordinatesPanel1.addInput(new InputField("X₁"));
+        InputField y1Field = coordinatesPanel1.addInput(new InputField("Y₁"));
 
-        InputField x1Field = new InputField("X1");
-        InputField y1Field = new InputField("Y1");
+        InputField x2Field = coordinatesPanel2.addInput(new InputField("X₂"));
+        InputField y2Field = coordinatesPanel2.addInput(new InputField("Y₂"));
 
-        InputField x2Field = new InputField("X2");
-        InputField y2Field = new InputField("Y2");
-
-        coordinatesPanel1.add(x1Field);
-        coordinatesPanel1.add(y1Field)   ;
-
-        coordinatesPanel2.add(x2Field)   ;
-        coordinatesPanel2.add(y2Field);
-
-        JButton confirm = new JButton("Add Wall");
+        JButton confirm = new JButton("Confirm");
 
         addWallPanel.add(coordinatesPanel1);
         addWallPanel.add(coordinatesPanel2);
         addWallPanel.add(confirm);
-
-        coordinatesPanel1.setAlignmentX(Component.CENTER_ALIGNMENT);
-        coordinatesPanel2.setAlignmentX(Component.CENTER_ALIGNMENT);
+        addWallPanel.add(Box.createVerticalStrut(5));
         confirm.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         confirm.addActionListener(e -> {
@@ -126,5 +109,71 @@ public class GUI extends JFrame {
 
             canvas.addWall(new Wall(new Position(x1,y1), new Position(x2,y2)));
         });
+        addWallPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Wall"));
+
+    }
+
+    private void initBatchPanel(){
+        addBatchPanel = new JPanel();
+        addBatchPanel.setLayout(new BoxLayout(addBatchPanel, BoxLayout.Y_AXIS));
+
+        InputPanel coordinatesPanel1 = new InputPanel();
+        InputPanel coordinatesPanel2 = new InputPanel();
+
+        InputField x1Field = coordinatesPanel1.addInput(new InputField("X₁"));
+        InputField y1Field = coordinatesPanel1.addInput(new InputField("Y₁"));
+
+        InputField x2Field = coordinatesPanel2.addInput(new InputField("X₂"));
+        InputField y2Field = coordinatesPanel2.addInput(new InputField("Y₂"));
+
+        InputPanel speedPanel = new InputPanel();
+        InputField startSpeed = speedPanel.addInput(new InputField("v₁"));
+        InputField endSPeed = speedPanel.addInput(new InputField("v₂"));
+
+        InputPanel anglePanel = new InputPanel();
+        InputField startAngle = anglePanel.addInput(new InputField("θ₁"));
+        InputField endAngle = anglePanel.addInput(new InputField("θ₂"));
+
+        InputField numPoints = new InputField("N");
+
+        JButton confirm = new JButton("Confirm");
+
+        addBatchPanel.add(coordinatesPanel1);
+        addBatchPanel.add(coordinatesPanel2);
+        addBatchPanel.add(speedPanel);
+        addBatchPanel.add(anglePanel);
+        addBatchPanel.add(numPoints);
+        addBatchPanel.add(Box.createVerticalStrut(5));
+        addBatchPanel.add(confirm);
+        addBatchPanel.add(Box.createVerticalStrut(5));
+        numPoints.setAlignmentX(Component.CENTER_ALIGNMENT);
+        confirm.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        confirm.addActionListener(e -> {
+            double  x1 = Double.parseDouble(x1Field.getInput());
+            double y1 = Double.parseDouble(y1Field.getInput());
+
+            double  x2 = Double.parseDouble(x2Field.getInput());
+            double y2 = Double.parseDouble(y2Field.getInput());
+
+            double v1 = Double.parseDouble(startSpeed.getInput());
+            double v2 = Double.parseDouble(endSPeed.getInput());
+
+            double angle1 = Double.parseDouble(startAngle.getInput());
+            double angle2 = Double.parseDouble(endAngle.getInput());
+
+            int n = Integer.parseInt(numPoints.getInput());
+
+            double xStep = (x2-x1)/n;
+            double yStep = (y2-y1)/n;
+            double vStep = (v2-v1)/n;
+            double angleStep = (angle2-angle1)/n;
+            for(int i = 0; i < n; i++){
+                Particle particle = new Particle(new Position(x1, y1), v1, angle1);
+                x1+=xStep; y1+=yStep; v1+=vStep; angle1+=angleStep;
+                canvas.addParticle(particle);
+            }
+        });
+        addBatchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Batch"));
     }
 }

@@ -71,7 +71,7 @@ public class Particle {
         }
 
 
-        System.out.println("Next pos: " + next);
-        System.out.println("Wall count: " + walls.size());
+//        System.out.println("Next pos: " + next);
+//        System.out.println("Wall count: " + walls.size());
     }
 }
