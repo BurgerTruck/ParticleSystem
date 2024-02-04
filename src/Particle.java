@@ -39,22 +39,20 @@ public class Particle {
 
         boolean collided = false;
         for (Wall wall : walls) {
-            if (wall.doIntersect(temp, next, wall.p1, wall.p2)) {
+            if (wall.checkIntersection(temp, next, wall.p1, wall.p2)) {
                 Position wallNormal = wall.getPerpendicularVector();
                 double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
 
-                // Reflect the direction
                 dx -= 2 * dotProduct * wallNormal.x;
                 dy -= 2 * dotProduct * wallNormal.y;
 
-                // Update the next position based on the adjusted direction
                 next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
                 collided = true;
             }
         }
 
 
-        // Reflect direction if hitting canvas borders
+
         if (next.x < 0 || next.x > GUI.canvasWidth) {
             dx = -dx;
             collided = true;
@@ -64,7 +62,7 @@ public class Particle {
             collided = true;
         }
 
-        // only update the position of no collision has occurred
+
         if(!collided){
             p = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
             prev = p;
