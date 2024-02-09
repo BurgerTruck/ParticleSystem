@@ -99,7 +99,6 @@ public class CanvasPanel extends JPanel implements ActionListener {
 
         long curr = System.nanoTime();
         double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
-//        System.out.println(elapsed);
         prevStart = curr;
         for (int i = 0; i < NUM_THREADS; i++) {
             int finalI = i;
@@ -170,10 +169,8 @@ public class CanvasPanel extends JPanel implements ActionListener {
             public void keyTyped(KeyEvent e) {}
             @Override
             public void keyPressed(KeyEvent e) {
-                System.out.println("KEY PRESSED");
                 if(e.getKeyCode()==KeyEvent.VK_SPACE){
                     toggleTimer();
-                    System.out.println("SPACE PRESED");
                     prevStart = System.nanoTime();
                 }
                 else if(e.getKeyCode()==KeyEvent.VK_RIGHT){

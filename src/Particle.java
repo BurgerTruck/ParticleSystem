@@ -28,15 +28,8 @@ public class Particle {
     }
 
     public void move(ArrayList<Wall> walls, double timePassed){
-//        long time = System.nanoTime();
-//        if(lastMoved==-1) lastMoved = time;
-//        double elapsed = (time - lastMoved)/1000000000d;
-//        System.out.println(elapsed);
-//        lastMoved = time;
         Position next = getNextPosition(timePassed);
         Position temp = p;
-//        boolean collided = false;
-
         boolean collided = false;
         for (Wall wall : walls) {
             if (wall.doIntersect(temp, next, wall.p1, wall.p2)) {
@@ -66,12 +59,9 @@ public class Particle {
 
         // only update the position of no collision has occurred
         if(!collided){
-            p = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
+            p = next;
             prev = p;
         }
 
-
-//        System.out.println("Next pos: " + next);
-//        System.out.println("Wall count: " + walls.size());
     }
 }
