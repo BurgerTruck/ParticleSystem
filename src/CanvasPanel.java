@@ -4,10 +4,9 @@ import java.awt.Point;
 import java.awt.event.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.TimerTask;
 
-public class CanvasPanel extends JPanel implements ActionListener {
+public class CanvasPanel extends JPanel {
     public static final int NUM_THREADS = 8;
 
     private ArrayList<Particle> particles;
@@ -63,8 +62,8 @@ public class CanvasPanel extends JPanel implements ActionListener {
         };
         java.util.Timer timer = new java.util.Timer();
         timer.scheduleAtFixedRate(task, 0, 1);;
-//        timer = new Timer(1, this);
-//        timer.start();
+
+        //fps timer
         new Timer(500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -72,6 +71,7 @@ public class CanvasPanel extends JPanel implements ActionListener {
                 frames = 0;
             }
         }).start();
+
         initializeListeners();
 
         setBorder(BorderFactory.createLineBorder(Color.BLACK,1));
@@ -100,12 +100,6 @@ public class CanvasPanel extends JPanel implements ActionListener {
 
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        updateParticles();
-        waitThreads();
-        repaint();
-    }
 
     private void toggleTimer(){
         playing = !playing;
@@ -133,22 +127,25 @@ public class CanvasPanel extends JPanel implements ActionListener {
             threads[i].start();
         }
         stepPressed = false;
-
     }
     private BasicStroke stroke = new BasicStroke(3);
+
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
         g2.setStroke(stroke);
+
         for(Particle particle: particles)drawPoint(g2, particle);
         for(Wall wall: walls)drawWall(g2, wall);
+
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
+
         frames++;
     }
 
@@ -204,7 +201,7 @@ public class CanvasPanel extends JPanel implements ActionListener {
                 }
                 else if(e.getKeyCode()==KeyEvent.VK_RIGHT){
                     stepPressed = true;
-                    actionPerformed(null);
+
                 }
             }
             @Override

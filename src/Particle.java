@@ -31,7 +31,9 @@ public class Particle {
         Position next = getNextPosition(timePassed);
         Position temp = p;
         boolean collided = false;
-        for (Wall wall : walls) {
+        
+        for (int i = 0; i < walls.size(); i++) {
+            Wall wall = walls.get(i);
             if (wall.checkIntersection(temp, next, wall.p1, wall.p2)) {
                 Position wallNormal = wall.getPerpendicularVector();
                 double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
