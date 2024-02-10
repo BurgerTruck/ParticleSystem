@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.TimerTask;
@@ -37,14 +38,15 @@ public class CanvasPanel extends JPanel {
         fpsPanel.setAlignmentX(RIGHT_ALIGNMENT);
         fpsPanel.setMaximumSize(new Dimension(30,20));
         add(fpsPanel);
-
         particles = new ArrayList<>();
         walls = new ArrayList<>();
+
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                updateParticles();
+                if(playing || stepPressed)updateParticles();
                 waitThreads();
+                stepPressed = false;
                 try {
                     SwingUtilities.invokeAndWait(new Runnable() {
                         @Override
@@ -57,12 +59,10 @@ public class CanvasPanel extends JPanel {
                 } catch (InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
-
             }
         };
         java.util.Timer timer = new java.util.Timer();
         timer.scheduleAtFixedRate(task, 0, 1);;
-
         //fps timer
         new Timer(500, new ActionListener() {
             @Override
@@ -116,17 +116,18 @@ public class CanvasPanel extends JPanel {
     private void updateParticles(){
         long curr = System.nanoTime();
         double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
+
         prevStart = curr;
         for (int i = 0; i < NUM_THREADS; i++) {
             int finalI = i;
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
-                    if(playing || stepPressed)particles.get(j).move(walls, elapsed);
+                    particles.get(j).move(walls, elapsed);
                 }
             });
             threads[i].start();
         }
-        stepPressed = false;
+
     }
     private BasicStroke stroke = new BasicStroke(3);
 
@@ -139,7 +140,6 @@ public class CanvasPanel extends JPanel {
 
         for(Particle particle: particles)drawPoint(g2, particle);
         for(Wall wall: walls)drawWall(g2, wall);
-
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mouse, this);
