@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class CanvasPanel extends JPanel implements ActionListener {
-    public static final int NUM_THREADS = 16;
+    public static final int NUM_THREADS = 8;
 
     private ArrayList<Particle> particles;
     private ArrayList<Wall> walls;
@@ -64,16 +64,23 @@ public class CanvasPanel extends JPanel implements ActionListener {
     private void drawWall(Graphics2D g, Wall wall){
         g.drawLine((int) wall.p1.x, (int) (getHeight()- wall.p1.y), (int) wall.p2.x, (int) (getHeight()-wall.p2.y));
     }
+    private int particleWidth = 3;
+    private int particleHeight = 3;
+    private int halfWidth = particleWidth>>1;
+    private int halfHeight = particleHeight>>1;
     private void drawPoint(Graphics2D g, Particle particle){
         int x = (int) Math.round(particle.p.x );
         int y = (int) (getHeight()- Math.round(particle.p.y));
-
-        g.drawLine(x,y,x,y);
+//
+//        g.drawLine(x,y,x,y);
+        g.fillRect(x-halfWidth, y-halfHeight, particleWidth,particleHeight);
 
     }
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        updateParticles();
+        waitThreads();
         repaint();
     }
 
@@ -89,14 +96,7 @@ public class CanvasPanel extends JPanel implements ActionListener {
             }
         }
     }
-    private BasicStroke stroke = new BasicStroke(3);
-    @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-        Graphics2D g2 = (Graphics2D) g;
-        g2.setStroke(stroke);
-
+    private void updateParticles(){
         long curr = System.nanoTime();
         double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
         prevStart = curr;
@@ -105,16 +105,22 @@ public class CanvasPanel extends JPanel implements ActionListener {
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
                     if(playing || stepPressed)particles.get(j).move(walls, elapsed);
-                    drawPoint(g2, particles.get(j));
-                }
-                for(int j = finalI;j<walls.size();j+=NUM_THREADS){
-                    drawWall(g2, walls.get(j));
                 }
             });
             threads[i].start();
         }
         stepPressed = false;
-        waitThreads();
+
+    }
+    private BasicStroke stroke = new BasicStroke(3);
+    @Override
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        Graphics2D g2 = (Graphics2D) g;
+        g2.setStroke(stroke);
+        for(Particle particle: particles)drawPoint(g2, particle);
+        for(Wall wall: walls)drawWall(g2, wall);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mouse, this);
