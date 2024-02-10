@@ -2,8 +2,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.TimerTask;
 
 public class CanvasPanel extends JPanel implements ActionListener {
     public static final int NUM_THREADS = 8;
@@ -39,9 +41,30 @@ public class CanvasPanel extends JPanel implements ActionListener {
 
         particles = new ArrayList<>();
         walls = new ArrayList<>();
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                updateParticles();
+                waitThreads();
+                try {
+                    SwingUtilities.invokeAndWait(new Runnable() {
+                        @Override
+                        public void run() {
+                            repaint();
+                        }
+                    });
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
 
-        timer = new Timer(1, this);
-        timer.start();
+            }
+        };
+        java.util.Timer timer = new java.util.Timer();
+        timer.scheduleAtFixedRate(task, 0, 1);;
+//        timer = new Timer(1, this);
+//        timer.start();
         new Timer(500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
