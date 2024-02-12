@@ -2,13 +2,18 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
-import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.TimerTask;
 
 public class CanvasPanel extends JPanel {
-    public static final int NUM_THREADS = 8;
+    public static final int NUM_THREADS = 9;
+    public static final int SQRT_THREADS = (int) Math.sqrt(NUM_THREADS);
+    private static final int BUFFER_WIDTH = GUI.canvasWidth/SQRT_THREADS ;
+    private static final int BUFFER_HEIGHT = GUI.canvasHeight/SQRT_THREADS;
+    private static final int BUFFER_PADDING = 0;
 
     private ArrayList<Particle> particles;
     private ArrayList<Wall> walls;
@@ -22,6 +27,8 @@ public class CanvasPanel extends JPanel {
     private boolean playing = true;
     private boolean stepPressed = false;
     private Timer timer;
+    CanvasBuffer[] buffers;
+    private LinkedList<Particle>[] particlesToUpdate;
     public CanvasPanel(int width, int height){
         super(true);
         Dimension d = new Dimension(width, height);
@@ -38,31 +45,57 @@ public class CanvasPanel extends JPanel {
         fpsPanel.setAlignmentX(RIGHT_ALIGNMENT);
         fpsPanel.setMaximumSize(new Dimension(30,20));
         add(fpsPanel);
+        particlesToUpdate = new LinkedList[NUM_THREADS];
+//        for(int i = 0; i < particlesToUpdate.length; i++){
+//            particlesToUpdate[i]    =  new LinkedList();
+//        }
         particles = new ArrayList<>();
         walls = new ArrayList<>();
+        buffers = new CanvasBuffer[NUM_THREADS];
+        for(int i = 0; i < SQRT_THREADS; i++){
+            for(int j =0 ; j < SQRT_THREADS; j++){
+               buffers[i*SQRT_THREADS + j] = new CanvasBuffer(BUFFER_WIDTH+2*BUFFER_PADDING, BUFFER_HEIGHT + 2* BUFFER_PADDING, j * BUFFER_WIDTH - BUFFER_PADDING, i * BUFFER_HEIGHT - BUFFER_PADDING);
+//                System.out.println(buffers[i*SQRT_THREADS+j].startY);
+//                System.out.println(buffers[i*SQRT_THREADS+j].endY   );
+            }
+        }
 
-        TimerTask task = new TimerTask() {
+        new Timer(1, new ActionListener() {
             @Override
-            public void run() {
+            public void actionPerformed(ActionEvent e) {
                 if(playing || stepPressed)updateParticles();
                 waitThreads();
-                stepPressed = false;
-                try {
-                    SwingUtilities.invokeAndWait(new Runnable() {
+                for(int i = 0; i < threads.length; i++){
+                    int finalI = i;
+                    threads[i]   = new Thread(new Runnable() {
                         @Override
                         public void run() {
-                            repaint();
+                            CanvasBuffer buffer = buffers[finalI];
+                            buffer.g2d.clearRect(0,0,buffer.getWidth(),buffer.getHeight());
+////                            buffer.g2d.setColor(Color.RED);
+////                            buffer.g2d.drawRect(0+BUFFER_PADDING,0-BUFFER_PADDING,buffer.getWidth()-BUFFER_PADDING,buffer.getHeight()-BUFFER_PADDING);
+////                            buffer.g2d.drawRect(0,0,buffer.getWidth()-1,buffer.getHeight()-1);
+////                            System.out.println(buffer.getHeight());
+//                            buffer.g2d.fillRect(1,199,3,3);
+                            buffer.g2d.setColor(Color.BLACK);
+                            for(int j = 0; j < particles.size(); j++){
+                                Particle p = particles.get(j);
+
+                                if(p.p.x>=buffer.startX + BUFFER_PADDING && p.p.x <= buffer.endX - BUFFER_PADDING   && p.p.y >= buffer.startY + BUFFER_PADDING   && p.p.y <= buffer.endY - BUFFER_PADDING){
+                                    drawPoint(buffer.g2d, p);
+                                }
+
+                            }
                         }
                     });
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (InvocationTargetException e) {
-                    throw new RuntimeException(e);
+                    threads[i].start();
                 }
+                stepPressed = false;
+                waitThreads();
+                repaint();
+
             }
-        };
-        java.util.Timer timer = new java.util.Timer();
-        timer.scheduleAtFixedRate(task, 0, 1);;
+        }).start();
         //fps timer
         new Timer(500, new ActionListener() {
             @Override
@@ -87,16 +120,22 @@ public class CanvasPanel extends JPanel {
     private void drawWall(Graphics2D g, Wall wall){
         g.drawLine((int) wall.p1.x, (int) (getHeight()- wall.p1.y), (int) wall.p2.x, (int) (getHeight()-wall.p2.y));
     }
-    private int particleWidth = 3;
-    private int particleHeight = 3;
+    private int particleWidth = 1;
+    private int particleHeight = 1;
     private int halfWidth = particleWidth>>1;
     private int halfHeight = particleHeight>>1;
     private void drawPoint(Graphics2D g, Particle particle){
-        int x = (int) Math.round(particle.p.x );
-        int y = (int) (getHeight()- Math.round(particle.p.y));
+
+        int x = (int) (particle.p.x );
+        int y = (int) (particle.p.y);
 //
+//        g.fillRect(1,199,3,3);
 //        g.drawLine(x,y,x,y);
-        g.fillRect(x-halfWidth, y-halfHeight, particleWidth,particleHeight);
+//        g.fillRect((x-halfWidth)%BUFFER_WIDTH + BUFFER_PADDING , (y-halfHeight)%BUFFER_HEIGHT, particleWidth,particleHeight);
+//        System.out.println(x%BUFFER_WIDTH+halfWidth);
+//        System.out.println(BUFFER_HEIGHT- y%BUFFER_HEIGHT-halfHeight);
+//        System.out.println();
+        g.fillRect(x%BUFFER_WIDTH+BUFFER_PADDING-halfWidth, BUFFER_HEIGHT-1- y%BUFFER_HEIGHT-halfHeight , particleWidth,particleHeight);
 
     }
 
@@ -116,17 +155,19 @@ public class CanvasPanel extends JPanel {
     private void updateParticles(){
         long curr = System.nanoTime();
         double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
-
+//        double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
+//        double elapsed = 1d/144d;
         prevStart = curr;
         for (int i = 0; i < NUM_THREADS; i++) {
             int finalI = i;
             threads[i] = new Thread(() -> {
-                for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
+                for(int j = finalI; j < particles.size(); j+=NUM_THREADS){
                     particles.get(j).move(walls, elapsed);
                 }
             });
             threads[i].start();
         }
+
 
     }
     private BasicStroke stroke = new BasicStroke(3);
@@ -134,11 +175,14 @@ public class CanvasPanel extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         Graphics2D g2 = (Graphics2D) g;
-        g2.setStroke(stroke);
 
-        for(Particle particle: particles)drawPoint(g2, particle);
+        for(CanvasBuffer buffer: buffers){
+//            System.out.println(buffer.getRGB(0,0));
+            g2.drawImage(buffer, null, buffer.startX, GUI.canvasHeight-buffer.startY-BUFFER_HEIGHT-BUFFER_PADDING);
+
+        }
+        g2.setStroke(stroke);
         for(Wall wall: walls)drawWall(g2, wall);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
