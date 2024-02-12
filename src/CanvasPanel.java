@@ -28,7 +28,7 @@ public class CanvasPanel extends JPanel {
     private boolean stepPressed = false;
     private Timer timer;
     CanvasBuffer[] buffers;
-    private LinkedList<Particle>[] particlesToUpdate;
+//    private LinkedList<Particle>[] particlesToUpdate;
     public CanvasPanel(int width, int height){
         super(true);
         Dimension d = new Dimension(width, height);
@@ -45,7 +45,7 @@ public class CanvasPanel extends JPanel {
         fpsPanel.setAlignmentX(RIGHT_ALIGNMENT);
         fpsPanel.setMaximumSize(new Dimension(30,20));
         add(fpsPanel);
-        particlesToUpdate = new LinkedList[NUM_THREADS];
+//        particlesToUpdate = new LinkedList[NUM_THREADS];
 //        for(int i = 0; i < particlesToUpdate.length; i++){
 //            particlesToUpdate[i]    =  new LinkedList();
 //        }
@@ -59,7 +59,6 @@ public class CanvasPanel extends JPanel {
 //                System.out.println(buffers[i*SQRT_THREADS+j].endY   );
             }
         }
-
         new Timer(1, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -72,16 +71,10 @@ public class CanvasPanel extends JPanel {
                         public void run() {
                             CanvasBuffer buffer = buffers[finalI];
                             buffer.g2d.clearRect(0,0,buffer.getWidth(),buffer.getHeight());
-////                            buffer.g2d.setColor(Color.RED);
-////                            buffer.g2d.drawRect(0+BUFFER_PADDING,0-BUFFER_PADDING,buffer.getWidth()-BUFFER_PADDING,buffer.getHeight()-BUFFER_PADDING);
-////                            buffer.g2d.drawRect(0,0,buffer.getWidth()-1,buffer.getHeight()-1);
-////                            System.out.println(buffer.getHeight());
-//                            buffer.g2d.fillRect(1,199,3,3);
                             buffer.g2d.setColor(Color.BLACK);
                             for(int j = 0; j < particles.size(); j++){
                                 Particle p = particles.get(j);
-
-                                if(p.p.x>=buffer.startX + BUFFER_PADDING && p.p.x <= buffer.endX - BUFFER_PADDING   && p.p.y >= buffer.startY + BUFFER_PADDING   && p.p.y <= buffer.endY - BUFFER_PADDING){
+                                if(p.p.x>=buffer.startX && p.p.x <= buffer.endX && p.p.y >= buffer.startY  && p.p.y <= buffer.endY ){
                                     drawPoint(buffer.g2d, p);
                                 }
 
@@ -120,8 +113,8 @@ public class CanvasPanel extends JPanel {
     private void drawWall(Graphics2D g, Wall wall){
         g.drawLine((int) wall.p1.x, (int) (getHeight()- wall.p1.y), (int) wall.p2.x, (int) (getHeight()-wall.p2.y));
     }
-    private int particleWidth = 1;
-    private int particleHeight = 1;
+    private int particleWidth =3;
+    private int particleHeight = 3;
     private int halfWidth = particleWidth>>1;
     private int halfHeight = particleHeight>>1;
     private void drawPoint(Graphics2D g, Particle particle){
@@ -135,7 +128,7 @@ public class CanvasPanel extends JPanel {
 //        System.out.println(x%BUFFER_WIDTH+halfWidth);
 //        System.out.println(BUFFER_HEIGHT- y%BUFFER_HEIGHT-halfHeight);
 //        System.out.println();
-        g.fillRect(x%BUFFER_WIDTH+BUFFER_PADDING-halfWidth, BUFFER_HEIGHT-1- y%BUFFER_HEIGHT-halfHeight , particleWidth,particleHeight);
+        g.fillRect(x%BUFFER_WIDTH-halfWidth, BUFFER_HEIGHT-1- y%BUFFER_HEIGHT-halfHeight , particleWidth,particleHeight);
 
     }
 

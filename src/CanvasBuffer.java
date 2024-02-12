@@ -9,7 +9,7 @@ public class CanvasBuffer extends BufferedImage {
     public int endY;
     public Graphics2D g2d;
     public CanvasBuffer(int width, int height, int offsetX, int offsetY ) {
-        super(width, height, BufferedImage.TYPE_INT_RGB);
+        super(width, height, BufferedImage.TYPE_BYTE_GRAY);
         this.startX = offsetX;
         this.startY = offsetY;
         this.g2d = createGraphics();
