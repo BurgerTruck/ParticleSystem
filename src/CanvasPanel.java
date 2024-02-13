@@ -5,8 +5,6 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.TimerTask;
 
 public class CanvasPanel extends JPanel {
     public static final int NUM_THREADS = 8;
@@ -22,7 +20,6 @@ public class CanvasPanel extends JPanel {
     private int frames = 0;
     private boolean playing = true;
     private boolean stepPressed = false;
-    private Timer timer;
     private BufferedImage buffer;
     private Graphics2D[] bufferGraphics;
     public CanvasPanel(int width, int height){
@@ -43,61 +40,41 @@ public class CanvasPanel extends JPanel {
         add(fpsPanel);
         particles = new ArrayList<>();
         walls = new ArrayList<>();
-        buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
+        buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
         bufferGraphics = new Graphics2D[NUM_THREADS];
+
         for(int i = 0; i < NUM_THREADS; i++){
-            bufferGraphics[i]   = buffer.createGraphics();
+            bufferGraphics[i] =buffer.createGraphics();
             bufferGraphics[i].setBackground(Color.WHITE);
-//            bufferGraphics[i].setBackground(new Color(0,0,0,0));
         }
+
+
         new Thread(new Runnable() {
             @Override
             public void run() {
                 while(true){
-//                    try {
-//                        SwingUtilities.invokeAndWait(new Runnable() {
-//                            @Override
-//                            public void run() {
-
-                                synchronized (buffer) {
-                                    bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
-                                    if (playing || stepPressed) updateParticles();
-                                        waitThreads();
-                                }
-                                stepPressed = false;
-                            try {
-                                SwingUtilities.invokeAndWait(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        repaint();
-                                    }
-                                });
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            } catch (InvocationTargetException e) {
-                                throw new RuntimeException(e);
+                    synchronized (buffer) {
+                            bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
+                            if (playing || stepPressed) updateAndDrawToBuffer();
+                                waitThreads();
+                    }
+                    stepPressed = false;
+                    try {
+                        SwingUtilities.invokeAndWait(new Runnable() {
+                            @Override
+                            public void run() {
+                                repaint();
                             }
-
-//                            }
-//                        });
-//                    } catch (InterruptedException e) {
-//                        throw new RuntimeException(e);
-//                    } catch (InvocationTargetException e) {
-//                        throw new RuntimeException(e);
-//                    }
-
+                        });
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
         }).start();
-//        new Timer(1, new ActionListener() {
-//            @Override
-//            public void actionPerformed(ActionEvent e) {
-//
-//
-//
-//            }
-//        }).start();;
-//        timer.scheduleAtFixedRate(task, 0, 1);;
+
         //fps timer
         new Timer(500, new ActionListener() {
             @Override
@@ -108,7 +85,6 @@ public class CanvasPanel extends JPanel {
         }).start();
 
         initializeListeners();
-
         setBorder(BorderFactory.createLineBorder(Color.BLACK,1));
     }
 
@@ -130,19 +106,10 @@ public class CanvasPanel extends JPanel {
         int x = (int) (particle.p.x );
         int y = (int) (getHeight()- (particle.p.y));
         try {
-//            boolean render = false;
-//            int[] pixels = buffer.getRGB(x- halfWidth, y - halfHeight, particleWidth, particleHeight,null, 0, 1 );
-//            for(Integer pixel: pixels)
-//                if(pixel==-1) render = true;
             boolean render = buffer.getRGB(x, y)==-1;
-//            System.out.println(pixels.length);
             if(render)
                 g.fillRect(x - halfWidth, y - halfHeight, particleWidth, particleHeight);
-
-//            System.out.println(Arrays.toString(pixels));
-//            System.out.println(pixels.length);
-        }catch (ArrayIndexOutOfBoundsException e){
-        }
+        }catch (ArrayIndexOutOfBoundsException e){}
     }
 
 
@@ -158,11 +125,9 @@ public class CanvasPanel extends JPanel {
             }
         }
     }
-    private void updateParticles(){
+    private void updateAndDrawToBuffer(){
         long curr = System.nanoTime();
-
         double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
-
         prevStart = curr;
         for (int i = 0; i < NUM_THREADS; i++) {
             int finalI = i;
@@ -188,35 +153,15 @@ public class CanvasPanel extends JPanel {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
-
-//        for(int i = 0; i < NUM_THREADS; i++){
-//            int finalI = i;
-//            int finalI1 = i;
-//            threads[i]   = new Thread(new Runnable() {
-//                @Override
-//                public void run() {
-//                    bufferGraphics[finalI1].setColor(Color.BLACK);
-//                    for(int j = finalI; j < particles.size(); j+=NUM_THREADS){
-//                        drawPoint(bufferGraphics[0], particles.get(j));
-//                    }
-//                }
-//            });
-//            threads[i].start();
-//        }
-//        waitThreads();
-//        for(Particle particle: particles)drawPoint(g2, particle);
         synchronized (buffer){
             g2.drawImage(buffer, null, 0,0);
         }
-
-
         g2.setStroke(stroke);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
-
         frames++;
     }
 
