@@ -1,6 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
 import java.awt.*;
+import java.util.ArrayList;
 
 
 public class GUI extends JFrame {
@@ -168,10 +169,14 @@ public class GUI extends JFrame {
             double yStep = (y2-y1)/n;
             double vStep = (v2-v1)/n;
             double angleStep = (angle2-angle1)/n;
+            ArrayList<Particle> particles = new ArrayList<>();
             for(int i = 0; i < n; i++){
                 Particle particle = new Particle(new Position(x1, y1), v1, angle1);
                 x1+=xStep; y1+=yStep; v1+=vStep; angle1+=angleStep;
-                canvas.addParticle(particle);
+                particles.add(particle);
+            }
+            synchronized (canvas.getParticles()){
+                canvas.addParticles(particles);
             }
         });
         addBatchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Batch"));

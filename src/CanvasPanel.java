@@ -20,7 +20,9 @@ public class CanvasPanel extends JPanel {
     private int frames = 0;
     private boolean playing = true;
     private boolean stepPressed = false;
-    private BufferedImage buffer;
+    private BufferedImage back;
+    private BufferedImage front;
+    private Graphics2D frontGraphics;
     private Graphics2D[] bufferGraphics;
     public CanvasPanel(int width, int height){
         super(true);
@@ -40,11 +42,13 @@ public class CanvasPanel extends JPanel {
         add(fpsPanel);
         particles = new ArrayList<>();
         walls = new ArrayList<>();
-        buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
+        back = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
+        front = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
         bufferGraphics = new Graphics2D[NUM_THREADS];
-
+        frontGraphics = front.createGraphics();
+        frontGraphics.setBackground(Color.WHITE);
         for(int i = 0; i < NUM_THREADS; i++){
-            bufferGraphics[i] =buffer.createGraphics();
+            bufferGraphics[i] = back.createGraphics();
             bufferGraphics[i].setBackground(Color.WHITE);
         }
 
@@ -53,11 +57,17 @@ public class CanvasPanel extends JPanel {
             @Override
             public void run() {
                 while(true){
-                    synchronized (buffer) {
-                            bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
-                            if (playing || stepPressed) updateAndDrawToBuffer();
-                                waitThreads();
+                    bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
+                    synchronized (particles){
+                        if (playing || stepPressed) updateAndDrawToBuffer();
+                        waitThreads();
                     }
+
+
+//                    synchronized (front){
+                    frontGraphics.clearRect(0,0,GUI.canvasWidth, GUI.canvasHeight);
+                    frontGraphics.drawImage(back, null,0,0);
+//                    }
                     stepPressed = false;
                     try {
                         SwingUtilities.invokeAndWait(new Runnable() {
@@ -90,6 +100,9 @@ public class CanvasPanel extends JPanel {
 
     public void addParticle(Particle p){
         particles.add(p);
+    }
+    public void addParticles(java.util.List<Particle> particleList){
+        particles.addAll(particleList);
     }
 
     public void addWall(Wall wall){
@@ -135,7 +148,7 @@ public class CanvasPanel extends JPanel {
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
                     particles.get(j).move(walls, elapsed);
-                    drawPoint(buffer, bufferGraphics[finalI], particles.get(j));
+                    drawPoint(back, bufferGraphics[finalI], particles.get(j));
                 }
                 for(int j = finalI; j < walls.size(); j+=NUM_THREADS){
                     bufferGraphics[finalI].setStroke(stroke);
@@ -153,9 +166,9 @@ public class CanvasPanel extends JPanel {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
-        synchronized (buffer){
-            g2.drawImage(buffer, null, 0,0);
-        }
+//        synchronized (front){
+            g2.drawImage(front, null, 0,0);
+//        }
         g2.setStroke(stroke);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
@@ -225,5 +238,7 @@ public class CanvasPanel extends JPanel {
         });
     }
 
-
+    public ArrayList<Particle> getParticles() {
+        return particles;
+    }
 }
