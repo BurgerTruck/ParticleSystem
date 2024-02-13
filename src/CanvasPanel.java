@@ -5,6 +5,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.TimerTask;
 
 public class CanvasPanel extends JPanel {
@@ -110,13 +111,28 @@ public class CanvasPanel extends JPanel {
     private int particleHeight = 3;
     private int halfWidth = particleWidth>>1;
     private int halfHeight = particleHeight>>1;
-    private void drawPoint(Graphics2D g, Particle particle){
+    private void drawPoint(BufferedImage buffer, Graphics2D g, Particle particle){
         int x = (int) Math.round(particle.p.x );
         int y = (int) (getHeight()- Math.round(particle.p.y));
 //
 //        g.drawLine(x,y,x,y);
-        g.fillRect(x-halfWidth, y-halfHeight, particleWidth,particleHeight);
+        try {
+            boolean render = false;
+            int[] pixels = buffer.getRGB(x- halfWidth, y - halfHeight, particleWidth, particleHeight,null, 0, particleHeight );
+            for(Integer pixel: pixels) if(pixel==-1) render = true;
+//            System.out.println(pixels.length);
+            if(render)
+                g.fillRect(x - halfWidth, y - halfHeight, particleWidth, particleHeight);
 
+//            System.out.println(Arrays.toString(pixels));
+//            System.out.println(pixels.length);
+        }catch (ArrayIndexOutOfBoundsException e){
+//            System.out.println(x-halfWidth);
+//            System.out.println(y-halfHeight);
+//            System.out.println(x);
+//            System.out.println(y);
+//            System.out.println();
+        }
     }
 
 
@@ -144,7 +160,7 @@ public class CanvasPanel extends JPanel {
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
                     particles.get(j).move(walls, elapsed);
-                    drawPoint(bufferGraphics[finalI], particles.get(j));
+                    drawPoint(buffer, bufferGraphics[finalI], particles.get(j));
                 }
             });
             threads[i].start();
@@ -176,6 +192,7 @@ public class CanvasPanel extends JPanel {
 //        waitThreads();
 //        for(Particle particle: particles)drawPoint(g2, particle);
         g2.drawImage(buffer, null, 0,0);
+        g2.setStroke(stroke);
         for(Wall wall: walls)drawWall(g2, wall);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();

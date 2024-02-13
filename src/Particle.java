@@ -48,11 +48,11 @@ public class Particle {
 
 
 
-        if (next.x < 0 || next.x > GUI.canvasWidth) {
+        if (next.x < 0 || next.x >= GUI.canvasWidth) {
             dx = -dx;
             collided = true;
         }
-        if (next.y < 0 || next.y > GUI.canvasHeight) {
+        if (next.y < 0 || next.y >= GUI.canvasHeight) {
             dy = -dy;
             collided = true;
         }
