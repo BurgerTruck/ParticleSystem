@@ -117,9 +117,11 @@ public class CanvasPanel extends JPanel {
 //
 //        g.drawLine(x,y,x,y);
         try {
-            boolean render = false;
-            int[] pixels = buffer.getRGB(x- halfWidth, y - halfHeight, particleWidth, particleHeight,null, 0, particleHeight );
-            for(Integer pixel: pixels) if(pixel==-1) render = true;
+//            boolean render = false;
+//            int[] pixels = buffer.getRGB(x- halfWidth, y - halfHeight, particleWidth, particleHeight,null, 0, 1 );
+//            for(Integer pixel: pixels)
+//                if(pixel==-1) render = true;
+            boolean render = buffer.getRGB(x, y)==-1;
 //            System.out.println(pixels.length);
             if(render)
                 g.fillRect(x - halfWidth, y - halfHeight, particleWidth, particleHeight);
@@ -156,11 +158,11 @@ public class CanvasPanel extends JPanel {
         prevStart = curr;
         for (int i = 0; i < NUM_THREADS; i++) {
             int finalI = i;
-            bufferGraphics[finalI].setColor(Color.BLACK);
+            bufferGraphics[0].setColor(Color.BLACK);
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
                     particles.get(j).move(walls, elapsed);
-                    drawPoint(buffer, bufferGraphics[finalI], particles.get(j));
+                    drawPoint(buffer, bufferGraphics[0], particles.get(j));
                 }
             });
             threads[i].start();
