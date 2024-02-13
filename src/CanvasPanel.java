@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.TimerTask;
 
 public class CanvasPanel extends JPanel {
-    public static final int NUM_THREADS = 8;
+    public static final int NUM_THREADS = 16;
 
     private ArrayList<Particle> particles;
     private ArrayList<Wall> walls;
@@ -49,39 +49,38 @@ public class CanvasPanel extends JPanel {
             bufferGraphics[i].setBackground(Color.WHITE);
 //            bufferGraphics[i].setBackground(new Color(0,0,0,0));
         }
-//        TimerTask task = new TimerTask() {
-//            @Override
-//            public void run() {
-//                if(playing || stepPressed)updateParticles();
-//                waitThreads();
-//                stepPressed = false;
-//                try {
-//                    SwingUtilities.invokeAndWait(new Runnable() {
-//                        @Override
-//                        public void run() {
-//                            repaint();
-//                        }
-//                    });
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                } catch (InvocationTargetException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//        };
-//        java.util.Timer timer = new java.util.Timer();
-        new Timer(1, new ActionListener() {
+        new Thread(new Runnable() {
             @Override
-            public void actionPerformed(ActionEvent e) {
-                bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
-                if(playing || stepPressed)updateParticles();
-                waitThreads();
-                stepPressed = false;
-                repaint();
+            public void run() {
+                while(true){
+                    try {
+                        SwingUtilities.invokeAndWait(new Runnable() {
+                            @Override
+                            public void run() {
+                                bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
+                                if(playing || stepPressed)updateParticles();
+                                waitThreads();
+                                stepPressed = false;
+                                repaint();
+                            }
+                        });
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    } catch (InvocationTargetException e) {
+                        throw new RuntimeException(e);
+                    }
 
-
+                }
             }
-        }).start();;
+        }).start();
+//        new Timer(1, new ActionListener() {
+//            @Override
+//            public void actionPerformed(ActionEvent e) {
+//
+//
+//
+//            }
+//        }).start();;
 //        timer.scheduleAtFixedRate(task, 0, 1);;
         //fps timer
         new Timer(500, new ActionListener() {
@@ -159,7 +158,6 @@ public class CanvasPanel extends JPanel {
         super.paintComponent(g);
 
         Graphics2D g2 = (Graphics2D) g;
-        g2.setStroke(stroke);
 
 //        for(int i = 0; i < NUM_THREADS; i++){
 //            int finalI = i;
