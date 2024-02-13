@@ -9,7 +9,7 @@ import java.util.Arrays;
 import java.util.TimerTask;
 
 public class CanvasPanel extends JPanel {
-    public static final int NUM_THREADS = 12;
+    public static final int NUM_THREADS = 8;
 
     private ArrayList<Particle> particles;
     private ArrayList<Wall> walls;
