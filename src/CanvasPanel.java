@@ -22,6 +22,8 @@ public class CanvasPanel extends JPanel {
     private boolean playing = true;
     private boolean stepPressed = false;
     private BufferedImage buffer;
+    private int[] pixels;
+    WritableRaster raster;
     private Graphics2D[] bufferGraphics;
     public CanvasPanel(int width, int height){
         super(true);
@@ -41,10 +43,13 @@ public class CanvasPanel extends JPanel {
         add(fpsPanel);
         particles = new ArrayList<>();
         walls = new ArrayList<>();
+        pixels = new int[GUI.canvasWidth * GUI.canvasHeight];
         buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
+        raster = this.buffer.getRaster();
         bufferGraphics = new Graphics2D[NUM_THREADS];
+
         for(int i = 0; i < NUM_THREADS; i++){
-            bufferGraphics[i] =buffer.createGraphics();
+            bufferGraphics[i] = (Graphics2D) buffer.getGraphics();
             bufferGraphics[i].setBackground(Color.WHITE);
         }
 
@@ -56,26 +61,38 @@ public class CanvasPanel extends JPanel {
                 while(true){
 
                     synchronized (buffer) {
-                        bufferGraphics[0].clearRect(0, 0, GUI.canvasWidth, GUI.canvasHeight);
+                        Arrays.fill(pixels,-1);
+//                        bufferGraphics[0].clearRect(0, 0, GUI.canvasWidth, GUI.canvasHeight);
                         synchronized (particles){
                             if (playing || stepPressed) updateAndDrawToBuffer();
                             waitThreads();
                         }
+                        raster.setPixels(0,0,GUI.canvasWidth, GUI.canvasHeight, pixels);
+                        for(int i= 0 ; i < NUM_THREADS; i++){
+                            int finalI = i;
+                            threads[i] = new Thread(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    for(int j = finalI; j < walls.size(); j+=NUM_THREADS){
+                                        bufferGraphics[finalI].setStroke(stroke);
+                                        drawWall(bufferGraphics[finalI], walls.get(j));
+                                    }
+                                }
+                            });
+                            threads[i].start();
+                        }
+                        waitThreads();
                     }
 
                     stepPressed = false;
 //                    try {
-                        SwingUtilities.invokeLater(new Runnable() {
-                            @Override
-                            public void run() {
-                                repaint();
-                            }
-                        });
-//                    } catch (InterruptedException e) {
-//                        throw new RuntimeException(e);
-//                    } catch (InvocationTargetException e) {
-//                        throw new RuntimeException(e);
-//                    }
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            repaint();
+                        }
+                    });
                 }
             }
         }).start();
@@ -114,9 +131,16 @@ public class CanvasPanel extends JPanel {
         int x = (int) (particle.p.x );
         int y = (int) (getHeight()- (particle.p.y));
         try {
-            boolean render =((BufferedImage) buffer).getRGB(x, y)==-1;
-            if(render)
-                g.fillRect(x - halfWidth, y - halfHeight, particleWidth, particleHeight);
+            int index = y * GUI.canvasWidth + x;
+            if(pixels[index]==-1){
+                index -=halfHeight * GUI.canvasWidth;
+                index -= halfWidth;
+                for(int i = 0; i < particleHeight; i++, index+=GUI.canvasWidth){
+                    for(int j= 0; j < particleWidth; j++){
+                        pixels[index+j] = -500;
+                    }
+                }
+            }
         }catch (ArrayIndexOutOfBoundsException e){
 
         }
@@ -146,10 +170,6 @@ public class CanvasPanel extends JPanel {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
                     particles.get(j).move(walls, elapsed);
                     drawPoint(buffer, bufferGraphics[finalI], particles.get(j));
-                }
-                for(int j = finalI; j < walls.size(); j+=NUM_THREADS){
-                    bufferGraphics[finalI].setStroke(stroke);
-                    drawWall(bufferGraphics[finalI], walls.get(j));
                 }
 
             });
