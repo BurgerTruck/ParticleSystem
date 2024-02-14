@@ -1,15 +1,25 @@
 public class Wall {
     Position p1;
     Position p2;
-
+    Position normalVector;
     public Wall(Position p1, Position p2) {
         this.p1 = p1;
-//        p1.x = Math.clamp(p1.x, 0, GUI.canvasWidth);
-//        p1.y = Math.clamp(p1.y, 0, GUI.canvasHeight);
-//
-//        p2.x = Math.clamp(p2.x, 0, GUI.canvasWidth);
-//        p2.y = Math.clamp(p2.y, 0, GUI.canvasHeight);
         this.p2 = p2;
+
+        double dx = p2.x - p1.x;
+        double dy = p2.y - p1.y;
+
+        // Rotate 90 deg
+        double normalX = -dy;
+        double normalY = dx;
+
+        double length = Math.sqrt(normalX * normalX + dx * dx);
+
+        if (length != 0) {
+            normalX /= length;
+            normalY /= length;
+        }
+        normalVector= new Position(normalX, normalY);
     }
 
     public boolean checkIntersection(Position p1, Position q1, Position p2, Position q2){
@@ -37,24 +47,10 @@ public class Wall {
         else{
             return false;
         }
-
-
     }
     public Position getPerpendicularVector(){
-        double dx = p2.x - p1.x;
-        double dy = p2.y - p1.y;
 
-        // Rotate 90 deg
-        double normalX = -dy;
-        double normalY = dx;
-
-        double length = Math.sqrt(normalX * normalX + dx * dx);
-
-        if (length != 0) {
-            normalX /= length;
-            normalY /= length;
-        }
-        return new Position(normalX, normalY);
+        return normalVector;
     }
 
 }

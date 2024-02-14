@@ -6,9 +6,6 @@ public class Particle {
     double speed; //pixels/s
     double angle;
 
-
-
-//    private long lastMoved = -1;
     private double dx;
     private double dy;
 
@@ -41,13 +38,10 @@ public class Particle {
                 dx -= 2 * dotProduct * wallNormal.x;
                 dy -= 2 * dotProduct * wallNormal.y;
 
-                next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
                 collided = true;
+                break;
             }
         }
-
-
-
         if (next.x < 0 || next.x >= GUI.canvasWidth) {
             dx = -dx;
             collided = true;
@@ -59,7 +53,8 @@ public class Particle {
 
 
         if(!collided){
-            p = next;
+            p = getNextPosition(timePassed);
+//            next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
             prev = p;
         }
 
