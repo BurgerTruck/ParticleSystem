@@ -3,7 +3,6 @@ import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
 import java.awt.image.*;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -21,10 +20,12 @@ public class CanvasPanel extends JPanel {
     private int frames = 0;
     private boolean playing = true;
     private boolean stepPressed = false;
-    private BufferedImage buffer;
-    private int[] pixels;
-    WritableRaster raster;
-    private Graphics2D[] bufferGraphics;
+
+    private final BufferedImage buffer;
+    private final int[] pixels;
+    private final int[] backPixels;
+    private final  WritableRaster raster;
+    private final int length = GUI.canvasWidth * GUI.canvasHeight;
     public CanvasPanel(int width, int height){
         super(true);
         Dimension d = new Dimension(width, height);
@@ -43,50 +44,26 @@ public class CanvasPanel extends JPanel {
         add(fpsPanel);
         particles = new ArrayList<>();
         walls = new ArrayList<>();
-        pixels = new int[GUI.canvasWidth * GUI.canvasHeight];
+
+        pixels = new int[length];
+        backPixels = new int[length];
         buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
+        Arrays.fill(backPixels, -1);
         raster = this.buffer.getRaster();
-        bufferGraphics = new Graphics2D[NUM_THREADS];
 
-        for(int i = 0; i < NUM_THREADS; i++){
-            bufferGraphics[i] = (Graphics2D) buffer.getGraphics();
-            bufferGraphics[i].setBackground(Color.WHITE);
-        }
-
-
-//        source
         new Thread(new Runnable() {
             @Override
             public void run() {
                 while(true){
-
                     synchronized (buffer) {
-                        Arrays.fill(pixels,-1);
-//                        bufferGraphics[0].clearRect(0, 0, GUI.canvasWidth, GUI.canvasHeight);
+                        System.arraycopy(backPixels,0, pixels,0, length);
                         synchronized (particles){
                             if (playing || stepPressed) updateAndDrawToBuffer();
-                            waitThreads();
+                            joinThreads();
                         }
                         raster.setPixels(0,0,GUI.canvasWidth, GUI.canvasHeight, pixels);
-                        for(int i= 0 ; i < NUM_THREADS; i++){
-                            int finalI = i;
-                            threads[i] = new Thread(new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    for(int j = finalI; j < walls.size(); j+=NUM_THREADS){
-                                        bufferGraphics[finalI].setStroke(stroke);
-                                        drawWall(bufferGraphics[finalI], walls.get(j));
-                                    }
-                                }
-                            });
-                            threads[i].start();
-                        }
-                        waitThreads();
                     }
-
                     stepPressed = false;
-//                    try {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
@@ -119,39 +96,78 @@ public class CanvasPanel extends JPanel {
 
     public void addWall(Wall wall){
         walls.add(wall);
+        drawWall( wall);
     }
-    private void drawWall(Graphics2D g, Wall wall){
-        g.drawLine((int) wall.p1.x, (int) (getHeight()- wall.p1.y), (int) wall.p2.x, (int) (getHeight()-wall.p2.y));
-    }
-    private int particleWidth = 3;
-    private int particleHeight = 3;
-    private int halfWidth = particleWidth>>1;
-    private int halfHeight = particleHeight>>1;
-    private void drawPoint(Image buffer, Graphics2D g, Particle particle){
-        int x = (int) (particle.p.x );
-        int y = (int) (getHeight()- (particle.p.y));
-        try {
-            int index = y * GUI.canvasWidth + x;
-            if(pixels[index]==-1){
-                index -=halfHeight * GUI.canvasWidth;
-                index -= halfWidth;
-                for(int i = 0; i < particleHeight; i++, index+=GUI.canvasWidth){
-                    for(int j= 0; j < particleWidth; j++){
-                        pixels[index+j] = -500;
-                    }
+    private void drawWall(Wall wall){
+//        g.drawLine((int) wall.p1.x, (int) (getHeight()- wall.p1.y), (int) wall.p2.x, (int) (getHeight()-wall.p2.y));
+        int x2 = (int) wall.p2.x, x1 = (int) wall.p1.x;
+        int y2 = getHeight() - (int)  wall.p2.y,  y1 =  getHeight() - (int) wall.p1.y;
+        int dx = Math.abs(x2 - x1);
+        int dy = Math.abs(y2 - y1);
+        int sx = x1 < x2 ? 1 : -1;
+        int sy = y1 < y2 ? 1 : -1;
+        int err = dx - dy;
+        int e2;
+
+        while (x1 != x2 || y1 != y2) {
+            for (int i = -halfHeight; i <= halfHeight; i++) {
+                for (int j = -halfWidth; j <= halfWidth; j++) {
+                    int newX = x1 + j;
+                    int newY = y1 + i;
+                    if (newX >= 0 && newX < GUI.canvasWidth && newY >= 0 && newY < GUI.canvasHeight) {
+                        backPixels[newY * GUI.canvasWidth + newX] = -500;
+                    }else break;
                 }
             }
-        }catch (ArrayIndexOutOfBoundsException e){
+            e2 = 2 * err;
+            if (e2 > -dy) {
+                err -= dy;
+                x1 += sx;
+            }
+            if (e2 < dx) {
+                err += dx;
+                y1 += sy;
+            }
+        }
+
+    }
+    private final int particleWidth = 3;
+    private final int particleHeight = 3;
+    private final int halfWidth = particleWidth>>1;
+    private final  int halfHeight = particleHeight>>1;
+    private void drawParticle(Particle p){
+        drawPixel(p.p);
+    }
+    private boolean drawPixel(Position p ){
+        int x = (int)(p.x);
+        int y = (int)(getHeight() - p.y);
+
+        int index = y * GUI.canvasWidth + x;
+        if(index <= 0 || index>=length) return false;
+        if(pixels[index]!=-1) return false;
+
+        index = index- GUI.canvasWidth * halfHeight - halfWidth;
+        for (int i = 0; i < particleHeight; i++, index += GUI.canvasWidth) {
+            int nextIndex = index;
+            for (int j = 0; j < particleWidth; j++, nextIndex++) {
+
+                if(nextIndex<0 || nextIndex>=length) continue;
+                pixels[nextIndex] = -500;
+
+            }
 
         }
+
+        return true;
     }
 
 
     private void toggleTimer(){
         playing = !playing;
     }
-    private void waitThreads(){
+    private void joinThreads(){
         for (Thread thread : threads) {
+            if(thread==null) break;
             try {
                 thread.join();
             } catch (InterruptedException e) {
@@ -164,18 +180,16 @@ public class CanvasPanel extends JPanel {
         double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
         prevStart = curr;
         for (int i = 0; i < NUM_THREADS; i++) {
+            if(i >=particles.size()) break;
             int finalI = i;
-            bufferGraphics[finalI].setColor(Color.BLACK);
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
                     particles.get(j).move(walls, elapsed);
-                    drawPoint(buffer, bufferGraphics[finalI], particles.get(j));
+                    drawParticle( particles.get(j));
                 }
-
             });
             threads[i].start();
         }
-
     }
     private BasicStroke stroke = new BasicStroke(3);
 

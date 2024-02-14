@@ -4,6 +4,11 @@ public class Wall {
 
     public Wall(Position p1, Position p2) {
         this.p1 = p1;
+//        p1.x = Math.clamp(p1.x, 0, GUI.canvasWidth);
+//        p1.y = Math.clamp(p1.y, 0, GUI.canvasHeight);
+//
+//        p2.x = Math.clamp(p2.x, 0, GUI.canvasWidth);
+//        p2.y = Math.clamp(p2.y, 0, GUI.canvasHeight);
         this.p2 = p2;
     }
 
