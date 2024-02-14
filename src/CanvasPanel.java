@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
 import java.awt.image.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -18,8 +19,6 @@ public class CanvasPanel extends JPanel {
     private Thread[]     threads = new Thread[NUM_THREADS];
     private long prevStart = -1;
     private int frames = 0;
-    private boolean playing = true;
-    private boolean stepPressed = false;
 
     private final BufferedImage buffer;
     private final int[] pixels;
@@ -55,21 +54,21 @@ public class CanvasPanel extends JPanel {
             @Override
             public void run() {
                 while(true){
-                    synchronized (buffer) {
-                        System.arraycopy(backPixels,0, pixels,0, length);
-                        synchronized (particles){
-                            if (playing || stepPressed) updateAndDrawToBuffer();
-                            joinThreads();
-                        }
-                        raster.setPixels(0,0,GUI.canvasWidth, GUI.canvasHeight, pixels);
+                    System.arraycopy(backPixels,0, pixels,0, length);
+                    updateParticlesAndDrawToBuffer();
+                    joinThreads();
+                    raster.setPixels(0,0,GUI.canvasWidth, GUI.canvasHeight, pixels);
+                    try {
+                        SwingUtilities.invokeAndWait(new Runnable() {
+                            @Override
+                            public void run() {
+                                repaint();
+                            }
+                        });
+                    } catch (InterruptedException | InvocationTargetException e) {
+                        throw new RuntimeException(e);
                     }
-                    stepPressed = false;
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
-                            repaint();
-                        }
-                    });
+                    frames++;
                 }
             }
         }).start();
@@ -115,7 +114,7 @@ public class CanvasPanel extends JPanel {
                     int newX = x1 + j;
                     int newY = y1 + i;
                     if (newX >= 0 && newX < GUI.canvasWidth && newY >= 0 && newY < GUI.canvasHeight) {
-                        backPixels[newY * GUI.canvasWidth + newX] = -500;
+                        backPixels[newY * GUI.canvasWidth + newX] = 1 ;
                     }else break;
                 }
             }
@@ -152,7 +151,7 @@ public class CanvasPanel extends JPanel {
             for (int j = 0; j < particleWidth; j++, nextIndex++) {
 
                 if(nextIndex<0 || nextIndex>=length) continue;
-                pixels[nextIndex] = -500;
+                pixels[nextIndex] = 1;
 
             }
 
@@ -161,10 +160,6 @@ public class CanvasPanel extends JPanel {
         return true;
     }
 
-
-    private void toggleTimer(){
-        playing = !playing;
-    }
     private void joinThreads(){
         for (Thread thread : threads) {
             if(thread==null) break;
@@ -175,9 +170,9 @@ public class CanvasPanel extends JPanel {
             }
         }
     }
-    private void updateAndDrawToBuffer(){
+    private void updateParticlesAndDrawToBuffer(){
         long curr = System.nanoTime();
-        double elapsed = prevStart == -1 || stepPressed ? (1d / 144d) : (curr - prevStart) / 1000000000d;
+        double elapsed =  (curr - prevStart) / 1000000000d;
         prevStart = curr;
         for (int i = 0; i < NUM_THREADS; i++) {
             if(i >=particles.size()) break;
@@ -196,20 +191,14 @@ public class CanvasPanel extends JPanel {
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
-
         Graphics2D g2 = (Graphics2D) g;
-        synchronized (buffer){
-            g2.drawImage(buffer, null, 0,0);
-//            g2.drawImage(buffer, 0,0, null  );
-//            g2.drawImage(buffer, 0,0, null  );
-        }
+        g2.drawImage(buffer, null, 0,0);
         g2.setStroke(stroke);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
-        frames++;
     }
 
 
@@ -233,7 +222,6 @@ public class CanvasPanel extends JPanel {
             }
             @Override
             public void mouseReleased(MouseEvent e) {
-//                System.out.println("RELEASEd");
                 Point mouse = e.getLocationOnScreen();
                 SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
 
@@ -252,24 +240,6 @@ public class CanvasPanel extends JPanel {
             public void mouseExited(MouseEvent e) {}
         });
 
-
-        addKeyListener(new KeyListener() {
-            @Override
-            public void keyTyped(KeyEvent e) {}
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if(e.getKeyCode()==KeyEvent.VK_SPACE){
-                    toggleTimer();
-                    prevStart = System.nanoTime();
-                }
-                else if(e.getKeyCode()==KeyEvent.VK_RIGHT){
-                    stepPressed = true;
-
-                }
-            }
-            @Override
-            public void keyReleased(KeyEvent e) {}
-        });
     }
 
     public ArrayList<Particle> getParticles() {
