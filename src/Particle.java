@@ -53,7 +53,7 @@ public class Particle {
 
 
         if(!collided){
-            p = getNextPosition(timePassed);
+            p = next;
 //            next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
             prev = p;
         }
