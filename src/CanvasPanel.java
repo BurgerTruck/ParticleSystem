@@ -5,7 +5,6 @@ import java.awt.event.*;
 import java.awt.image.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class CanvasPanel extends JPanel {
     public static final int NUM_THREADS = 8;
@@ -21,10 +20,31 @@ public class CanvasPanel extends JPanel {
     private int frames = 0;
 
     private final BufferedImage buffer;
-    private final int[] pixels;
-    private final int[] backPixels;
-    private final  WritableRaster raster;
+    private final BufferedImage frontBuffer;
     private final int length = GUI.canvasWidth * GUI.canvasHeight;
+    private boolean isExplorer;
+
+    public static final int eWidth = 33;
+    public static final int eHeight = 19;
+    private final int halfEWidth = eWidth>>1;
+    private final int halfEHeight = eHeight>>1;
+
+    private double spriteX = GUI.canvasWidth/2;
+    private double spriteY = GUI.canvasHeight/2;
+
+    private double bottomLeftX = spriteX - halfEWidth;
+    private double bottomLeftY = spriteY - halfEHeight;
+
+    private boolean wHeld = false;
+    private boolean aHeld = false;
+    private boolean sHeld = false;
+    private boolean dHeld = false;
+
+    private Graphics2D[] bufferGraphics;
+
+    private double spriteSpeedX = 75;
+    private double spriteSpeedY = 75;
+    private Kirby kirby;
     public CanvasPanel(int width, int height){
         super(true);
         Dimension d = new Dimension(width, height);
@@ -44,20 +64,30 @@ public class CanvasPanel extends JPanel {
         particles = new ArrayList<>();
         walls = new ArrayList<>();
 
-        pixels = new int[length];
-        backPixels = new int[length];
         buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
-        Arrays.fill(backPixels, -1);
-        raster = this.buffer.getRaster();
+        frontBuffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
 
+        bufferGraphics = new Graphics2D[NUM_THREADS];
+        for(int i = 0; i < NUM_THREADS; i++){
+            bufferGraphics[i] = buffer.createGraphics();
+            bufferGraphics[i].setBackground(Color.WHITE);
+            bufferGraphics[i].setColor(Color.BLACK);
+        }
+
+        kirby = new Kirby();
         new Thread(new Runnable() {
             @Override
             public void run() {
                 while(true){
-                    System.arraycopy(backPixels,0, pixels,0, length);
-                    updateParticlesAndDrawToBuffer();
+                    bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
+                    double elapsed = getElapsed();
+
+                    updateParticlesAndDrawToBuffer(elapsed);
                     joinThreads();
-                    raster.setPixels(0,0,GUI.canvasWidth, GUI.canvasHeight, pixels);
+                    kirby.updateAnimation(elapsed);
+                    updateSpritePosition(elapsed);
+                    frontBuffer.getGraphics().drawImage(buffer, 0,0, null);
+
                     try {
                         SwingUtilities.invokeAndWait(new Runnable() {
                             @Override
@@ -84,6 +114,12 @@ public class CanvasPanel extends JPanel {
 
         initializeListeners();
         setBorder(BorderFactory.createLineBorder(Color.BLACK,1));
+
+        if((eParticleWidth&1)==0) eParticleWidth++;
+        if((eParticleHeight&1)==0) eParticleHeight++;
+
+
+
     }
 
     public void addParticle(Particle p){
@@ -109,12 +145,12 @@ public class CanvasPanel extends JPanel {
         int e2;
 
         while (x1 != x2 || y1 != y2) {
-            for (int i = -halfHeight; i <= halfHeight; i++) {
-                for (int j = -halfWidth; j <= halfWidth; j++) {
+            for (int i = -halfParticleHeight; i <= halfParticleHeight; i++) {
+                for (int j = -halfParticleWidth; j <= halfParticleWidth; j++) {
                     int newX = x1 + j;
                     int newY = y1 + i;
                     if (newX >= 0 && newX < GUI.canvasWidth && newY >= 0 && newY < GUI.canvasHeight) {
-                        backPixels[newY * GUI.canvasWidth + newX] = 1 ;
+//                        backPixels[newY * GUI.canvasWidth + newX] = 1 ;
                     }else break;
                 }
             }
@@ -130,32 +166,54 @@ public class CanvasPanel extends JPanel {
         }
 
     }
+
     private final int particleWidth = 3;
     private final int particleHeight = 3;
-    private final int halfWidth = particleWidth>>1;
-    private final  int halfHeight = particleHeight>>1;
-    private void drawParticle(Particle p){
-        drawPixel(p.p);
+
+
+    private final int halfParticleWidth = particleWidth>>1;
+    private final int halfParticleHeight = particleHeight>>1;
+
+    private int eParticleWidth = (int) ((double)GUI.canvasWidth/eWidth * particleWidth);
+    private int eParticleHeight = eParticleWidth;
+
+    private void drawParticle(Particle p, Graphics2D g){
+        drawPixel(p.p, g);
     }
-    private boolean drawPixel(Position p ){
+    private void fillRect(int x, int y, int width, int height, Graphics2D g){
+
+        g.fillRect(x, y, width, height);
+    }
+    private boolean drawPixel(Position p, Graphics2D g){
         int x = (int)(p.x);
-        int y = (int)(getHeight() - p.y);
-
-        int index = y * GUI.canvasWidth + x;
-        if(index <= 0 || index>=length) return false;
-        if(pixels[index]!=-1) return false;
-
-        index = index- GUI.canvasWidth * halfHeight - halfWidth;
-        for (int i = 0; i < particleHeight; i++, index += GUI.canvasWidth) {
-            int nextIndex = index;
-            for (int j = 0; j < particleWidth; j++, nextIndex++) {
-
-                if(nextIndex<0 || nextIndex>=length) continue;
-                pixels[nextIndex] = 1;
-
-            }
-
+        int y = (int)(p.y);
+        int width = particleWidth;
+        int height = particleHeight;
+        if(isExplorer){
+            x = (int) ((x - bottomLeftX) / eWidth  *  GUI.canvasWidth);
+            y = (int) ((y - bottomLeftY)/ eHeight * GUI.canvasHeight);
+            width = eParticleWidth;
+            height = eParticleHeight;
         }
+        y = getHeight() - y;
+        int halfHeight = height>>1;
+        int halfWidth = width>>1;
+
+        int endX = Math.min(x + halfWidth, GUI.canvasWidth-1);
+        int endY = Math.min(y + halfHeight, GUI.canvasHeight-1);
+        x = Math.max(0, Math.min(x - halfWidth, GUI.canvasWidth - 1));
+        y = Math.max(0, Math.min(y - halfHeight, GUI.canvasHeight - 1));
+        endY = Math.max(0, endY);
+        endX = Math.max(0, endX);
+        width = endX - x+1;
+        height = endY - y+1;
+        if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0) return false;
+
+        int midX = endX + x >>1;
+        int midY = endY + y >>1;
+        if(   buffer.getRGB(midX, midY )!=-1)return false;
+
+        fillRect(x, y, width, height, g);
 
         return true;
     }
@@ -170,21 +228,26 @@ public class CanvasPanel extends JPanel {
             }
         }
     }
-    private void updateParticlesAndDrawToBuffer(){
-        long curr = System.nanoTime();
-        double elapsed =  (curr - prevStart) / 1000000000d;
-        prevStart = curr;
+    private void updateParticlesAndDrawToBuffer(double elapsed){
+
         for (int i = 0; i < NUM_THREADS; i++) {
             if(i >=particles.size()) break;
             int finalI = i;
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
                     particles.get(j).move(walls, elapsed);
-                    drawParticle( particles.get(j));
+                    drawParticle( particles.get(j), bufferGraphics[finalI]);
                 }
             });
             threads[i].start();
         }
+    }
+    private double getElapsed(){
+        long curr = System.nanoTime();
+
+        double elapsed =   (curr - prevStart) / 1000000000d;
+        prevStart = curr;
+        return elapsed;
     }
     private BasicStroke stroke = new BasicStroke(3);
 
@@ -192,13 +255,20 @@ public class CanvasPanel extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        g2.drawImage(buffer, null, 0,0);
+        g2.drawImage(frontBuffer, null, 0,0);
         g2.setStroke(stroke);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
+        if(!isExplorer){
+            g2.setColor(Color.RED);
+            g2.drawRect((int) (spriteX - halfEWidth), (int) (getHeight() - (spriteY + halfEHeight)),eWidth, eHeight);
+//            g2.fillRect((int) bottomLeftX, (int) (getHeight() - bottomLeftY), 5,5);
+        }
+        if(isExplorer)kirby.drawSprite(g2);
+
     }
 
 
@@ -206,7 +276,40 @@ public class CanvasPanel extends JPanel {
     private boolean rightClicked = true;
     private Point  clicked = null;
 
+
+    private void updateSpritePosition(double elapsed){
+        if(wHeld)spriteY +=spriteSpeedY * elapsed;
+        if(aHeld)spriteX -=spriteSpeedX*elapsed;
+        if(sHeld)spriteY -=spriteSpeedY * elapsed;
+        if(dHeld)spriteX +=spriteSpeedY*elapsed;
+
+        kirby.updateDirectionsHeld(wHeld, aHeld, sHeld, dHeld);
+        bottomLeftX = spriteX - halfEWidth;
+        bottomLeftY = spriteY - halfEHeight;
+    }
     private void initializeListeners(){
+        addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if(e.getKeyCode()==KeyEvent.VK_W) wHeld = true;
+                if(e.getKeyCode() == KeyEvent.VK_A) aHeld = true;
+                if(e.getKeyCode() == KeyEvent.VK_D) dHeld = true;
+                if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = true;
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                if(e.getKeyCode()==KeyEvent.VK_W) wHeld = false;
+                if(e.getKeyCode() == KeyEvent.VK_A) aHeld = false;
+                if(e.getKeyCode() == KeyEvent.VK_D) dHeld = false;
+                if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = false;
+            }
+        });
 
         addMouseListener(new MouseListener() {
             @Override
@@ -244,5 +347,15 @@ public class CanvasPanel extends JPanel {
 
     public ArrayList<Particle> getParticles() {
         return particles;
+    }
+
+    public void setExplorer(boolean explorer) {
+        isExplorer = explorer;
+    }
+    public void resetHeldKeys(){
+        aHeld = false;
+        wHeld = false;
+        sHeld = false;
+        dHeld = false;
     }
 }

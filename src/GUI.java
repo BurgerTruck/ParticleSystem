@@ -1,5 +1,7 @@
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
 import java.util.ArrayList;
 
@@ -12,7 +14,7 @@ public class GUI extends JFrame {
     private JPanel addWallPanel;
     private JPanel addBatchPanel;
     private CanvasPanel canvas;
-
+    private JToggleButton explorerModeButton;
     public GUI(){
         this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
         this.setVisible(true);
@@ -33,6 +35,7 @@ public class GUI extends JFrame {
         initPointPanel();
         initWallPanel();
         initBatchPanel();
+        initExplorerButton();
 
         JPanel sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
@@ -43,7 +46,8 @@ public class GUI extends JFrame {
         sidePanel.add(addWallPanel);
         sidePanel.add(Box.createVerticalStrut(20));
         sidePanel.add(addBatchPanel);
-
+        sidePanel.add(Box.createVerticalStrut(20));
+        sidePanel.add(explorerModeButton);
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
@@ -193,4 +197,17 @@ public class GUI extends JFrame {
         });
         addBatchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Batch"));
     }
+    private void initExplorerButton(){
+         explorerModeButton = new JToggleButton("Explorer Mode", false);
+         explorerModeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+         explorerModeButton.addChangeListener(new ChangeListener() {
+             @Override
+             public void stateChanged(ChangeEvent e) {
+                 canvas.setExplorer(explorerModeButton.isSelected());
+                 canvas.requestFocus();
+//                 canvas.resetHeldKeys();
+             }
+         });
+    }
+
 }
