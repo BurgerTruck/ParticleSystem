@@ -29,11 +29,14 @@ public class CanvasPanel extends JPanel {
     private final int halfEWidth = eWidth>>1;
     private final int halfEHeight = eHeight>>1;
 
+    //topleft is (0,0)
     private double spriteX = GUI.canvasWidth/2;
     private double spriteY = GUI.canvasHeight/2;
 
-    private double bottomLeftX = spriteX - halfEWidth;
-    private double bottomLeftY = spriteY - halfEHeight;
+    private int bottomLeftX = (int) (spriteX - halfEWidth);
+    private int bottomLeftY = (int) (spriteY - halfEHeight);
+    private int topRightX = (int) (spriteX + halfEWidth);
+    private int topRightY = (int) (spriteY + halfEHeight);
 
     private boolean wHeld = false;
     private boolean aHeld = false;
@@ -42,6 +45,7 @@ public class CanvasPanel extends JPanel {
 
     private Graphics2D[] bufferGraphics;
 
+    private int pixelSize;
     private double spriteSpeedX = 75;
     private double spriteSpeedY = 75;
     private Kirby kirby;
@@ -86,8 +90,7 @@ public class CanvasPanel extends JPanel {
                     joinThreads();
                     kirby.updateAnimation(elapsed);
                     updateSpritePosition(elapsed);
-                    frontBuffer.getGraphics().drawImage(buffer, 0,0, null);
-
+                    drawFrontBuffer();
                     try {
                         SwingUtilities.invokeAndWait(new Runnable() {
                             @Override
@@ -115,9 +118,8 @@ public class CanvasPanel extends JPanel {
         initializeListeners();
         setBorder(BorderFactory.createLineBorder(Color.BLACK,1));
 
-        if((eParticleWidth&1)==0) eParticleWidth++;
-        if((eParticleHeight&1)==0) eParticleHeight++;
-
+        pixelSize = (int) ((double)GUI.canvasWidth/eWidth);
+        if((pixelSize&1)==0)pixelSize++;
 
 
     }
@@ -184,20 +186,51 @@ public class CanvasPanel extends JPanel {
 
         g.fillRect(x, y, width, height);
     }
+    private void drawFrontBuffer(){
+
+        Graphics2D g = (Graphics2D) frontBuffer.getGraphics();
+        if(!isExplorer){
+           g.drawImage(buffer, 0,0, null);
+        }else{
+            synchronized (frontBuffer){
+                g.setBackground(Color.WHITE);
+                g.clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
+                int row = 0;
+                int col = 0;
+                for(int y = bottomLeftY; y<=topRightY; y++, row+=pixelSize){
+                    for(int x = bottomLeftX; x<=topRightX; x++, col+=pixelSize){
+                        if(x < 0 || y < 0 || x>=GUI.canvasWidth || y>=GUI.canvasHeight){
+                            g.setColor(Color.BLACK);
+                            g.fillRect(col, getHeight()- row - pixelSize, pixelSize, pixelSize);
+                            continue;
+                        }
+                        if(buffer.getRGB(x, getHeight()- y-1)!=-1){
+                            g.setColor(Color.BLACK);
+                            g.fillRect(col, getHeight()- row-pixelSize, pixelSize, pixelSize);
+                        }
+                    }
+                    col = 0;
+                }
+            }
+
+        }
+    }
     private boolean drawPixel(Position p, Graphics2D g){
         int x = (int)(p.x);
         int y = (int)(p.y);
+
         int width = particleWidth;
         int height = particleHeight;
-        if(isExplorer){
-            x = (int) ((x - bottomLeftX) / eWidth  *  GUI.canvasWidth);
-            y = (int) ((y - bottomLeftY)/ eHeight * GUI.canvasHeight);
-            width = eParticleWidth;
-            height = eParticleHeight;
-        }
-        y = getHeight() - y;
+
         int halfHeight = height>>1;
         int halfWidth = width>>1;
+        if(isExplorer){
+            if(x + halfWidth < bottomLeftX) return false;
+            if(x - halfWidth> topRightX+1) return false;
+            if(y + halfHeight < bottomLeftY) return false;
+            if(y - halfHeight > topRightY+1) return false;
+        }
+        y = getHeight() - y;
 
         int endX = Math.min(x + halfWidth, GUI.canvasWidth-1);
         int endY = Math.min(y + halfHeight, GUI.canvasHeight-1);
@@ -214,7 +247,6 @@ public class CanvasPanel extends JPanel {
         if(   buffer.getRGB(midX, midY )!=-1)return false;
 
         fillRect(x, y, width, height, g);
-
         return true;
     }
 
@@ -255,7 +287,12 @@ public class CanvasPanel extends JPanel {
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        g2.drawImage(frontBuffer, null, 0,0);
+        if(isExplorer){
+            synchronized (frontBuffer){
+                g2.drawImage(frontBuffer, null, 0,0);
+            }
+        }else g2.drawImage(frontBuffer, null, 0,0);
+
         g2.setStroke(stroke);
         if(clicked!=null){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
@@ -264,7 +301,7 @@ public class CanvasPanel extends JPanel {
         }
         if(!isExplorer){
             g2.setColor(Color.RED);
-            g2.drawRect((int) (spriteX - halfEWidth), (int) (getHeight() - (spriteY + halfEHeight)),eWidth, eHeight);
+            g2.drawRect(bottomLeftX, getHeight() - topRightY,eWidth, eHeight);
 //            g2.fillRect((int) bottomLeftX, (int) (getHeight() - bottomLeftY), 5,5);
         }
         if(isExplorer)kirby.drawSprite(g2);
@@ -284,8 +321,11 @@ public class CanvasPanel extends JPanel {
         if(dHeld)spriteX +=spriteSpeedY*elapsed;
 
         kirby.updateDirectionsHeld(wHeld, aHeld, sHeld, dHeld);
-        bottomLeftX = spriteX - halfEWidth;
-        bottomLeftY = spriteY - halfEHeight;
+        bottomLeftX = (int) (spriteX - halfEWidth);
+        bottomLeftY = (int) (spriteY - halfEHeight);
+        topRightX = (int) (spriteX + halfEWidth);
+        topRightY = (int) (spriteY + halfEHeight);
+
     }
     private void initializeListeners(){
         addKeyListener(new KeyListener() {
