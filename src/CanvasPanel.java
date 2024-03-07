@@ -3,8 +3,6 @@ import java.awt.*;
 import java.awt.Point;
 import java.awt.event.*;
 import java.awt.image.*;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 
 public class CanvasPanel extends JPanel {
 
@@ -16,7 +14,6 @@ public class CanvasPanel extends JPanel {
     private Controller controller;
     private Graphics2D[] bufferGraphics;
     private int pixelSize;
-    private Kirby kirby;
     public CanvasPanel(int width, int height){
         super(true);
         Dimension d = new Dimension(width, height);
@@ -25,7 +22,6 @@ public class CanvasPanel extends JPanel {
         setMinimumSize(d);
         setMaximumSize(d);
         setBackground(Color.WHITE);
-        this.controller = controller;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         fpsPanel = new JPanel();
@@ -45,9 +41,6 @@ public class CanvasPanel extends JPanel {
             bufferGraphics[i].setBackground(Color.WHITE);
             bufferGraphics[i].setColor(Color.BLACK);
         }
-
-        kirby = new Kirby();
-
 
         //fps timer
         new Timer(500, new ActionListener() {
@@ -82,8 +75,8 @@ public class CanvasPanel extends JPanel {
         int e2;
 
         while (x1 != x2 || y1 != y2) {
-            for (int i = -halfParticleHeight; i <= halfParticleHeight; i++) {
-                for (int j = -halfParticleWidth; j <= halfParticleWidth; j++) {
+            for (int i = -Config.halfParticleHeight; i <= Config.halfParticleHeight; i++) {
+                for (int j = -Config.halfParticleWidth; j <= Config.halfParticleWidth; j++) {
                     int newX = x1 + j;
                     int newY = y1 + i;
                     if (newX >= 0 && newX < GUI.canvasWidth && newY >= 0 && newY < GUI.canvasHeight) {
@@ -104,15 +97,7 @@ public class CanvasPanel extends JPanel {
 
     }
 
-    private final int particleWidth = 3;
-    private final int particleHeight = 3;
 
-
-    private final int halfParticleWidth = particleWidth>>1;
-    private final int halfParticleHeight = particleHeight>>1;
-
-    private int eParticleWidth = (int) ((double)GUI.canvasWidth/Config.eWidth * particleWidth);
-    private int eParticleHeight = eParticleWidth;
 
     public void drawParticle(Particle p, int bufferGraphicsIndex){
         drawPixel(p.p, bufferGraphics[bufferGraphicsIndex]);
@@ -154,11 +139,9 @@ public class CanvasPanel extends JPanel {
         int x = (int)(p.x);
         int y = (int)(p.y);
 
-        int width = particleWidth;
-        int height = particleHeight;
 
-        int halfHeight = height>>1;
-        int halfWidth = width>>1;
+        int halfHeight = Config.halfParticleHeight;
+        int halfWidth = Config.halfParticleWidth;
         if(!controller.inViewBox(x, y, halfWidth, halfHeight)) return false;
         y = getHeight() - y;
 
@@ -168,8 +151,8 @@ public class CanvasPanel extends JPanel {
         y = Math.max(0, Math.min(y - halfHeight, GUI.canvasHeight - 1));
         endY = Math.max(0, endY);
         endX = Math.max(0, endX);
-        width = endX - x+1;
-        height = endY - y+1;
+        int width = endX - x+1;
+        int height = endY - y+1;
         if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0) return false;
         int midX = endX + x >>1;
         int midY = endY + y >>1;
@@ -200,20 +183,38 @@ public class CanvasPanel extends JPanel {
         }
         if(!controller.isExplorer()){
             g2.setColor(Color.RED);
-            g2.drawRect(controller.getBottomLeftX(), getHeight() - controller.getTopRightY(),Config.eWidth, Config.eHeight);
+            g2.drawRect(controller.getBottomLeftX(), getHeight() - controller.getTopRightY(),
+                    controller.getTopRightX()-controller.getBottomLeftX(),
+                    controller.getTopRightY()-controller.getBottomLeftY());
         }
-        if(controller.isExplorer())kirby.drawSprite(g2);
+        drawKirby(g2, controller.getPlayerKirby());
 
     }
     private void drawKirby(Graphics2D g, Kirby kirby){
         double x = kirby.getX();
         double y = kirby.getY();
-
-        if(!controller.inViewBox((int) x, (int) y, Config.HALF_DRAW_KIRBY_WIDTH, Config.HALF_DRAW_KIRBY_HEIGHT )) return;
+        System.out.println(x);
+        System.out.println(y);
+        System.out.println();
+        if(!controller.inViewBox((int) x, (int) y, Config.halfKirbyWidth, Config.halfKirbyHeight)) return;
         int[] localPosition = controller.translatePositionToLocal(kirby.getX(), kirby.getY());
         int drawX = localPosition[0];
-        int drawY = localPosition[1]
-        kirby.drawSprite(g, );
+        int drawY = localPosition[1];
+
+        System.out.println(drawX);
+        System.out.println(drawY);
+        System.out.println();
+        int halfWidth;
+        int halfHeight;
+        if(controller.isExplorer()){
+            halfWidth = Config.halfEKirbyWidth;
+            halfHeight = Config.halfEKirbyHeight;
+        }else{
+            halfWidth = Config.halfKirbyWidth;
+            halfHeight = Config.halfKirbyHeight;
+        }
+        drawY = getHeight() - drawY ;
+        kirby.drawSprite(g, drawX - halfWidth, drawX + halfWidth,drawY - halfHeight, drawY + halfHeight );
     }
 
     private boolean leftClicked = false;

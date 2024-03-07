@@ -6,9 +6,26 @@ public class Config {
     public static final int halfEWidth = eWidth>>1;
     public static final int halfEHeight = eHeight>>1;
 
-    public static final int DRAW_KIRBY_WIDTH = 128;
-    public static final int DRAW_KIRBY_HEIGHT = 128;
+    public static final int kirbyWidth = 3;
+    public static final int kirbyHeight = 3;
 
-    public static final int HALF_DRAW_KIRBY_WIDTH = DRAW_KIRBY_WIDTH>>1;
-    public static final int HALF_DRAW_KIRBY_HEIGHT = DRAW_KIRBY_HEIGHT>>1;
+    public static final int halfKirbyWidth = kirbyWidth >>1;
+    public static final int halfKirbyHeight = kirbyHeight >>1;
+
+    public static final int particleWidth = 3;
+    public static final int particleHeight = 3;
+
+
+    public static final int halfParticleWidth = particleWidth>>1;
+    public static final int halfParticleHeight = particleHeight>>1;
+
+    public static final int eParticleWidth = (int) ((double)GUI.canvasWidth/Config.eWidth * particleWidth);
+    public static final int eParticleHeight = eParticleWidth;
+
+    public static final int eKirbyWidth = (int) ((double)GUI.canvasWidth/Config.eWidth * kirbyWidth);
+    public static final int eKirbyHeight = eKirbyWidth;
+
+    public static final int halfEKirbyWidth = eKirbyWidth>>1;
+    public static final int halfEKirbyHeight = eKirbyHeight>>1;
+
 }

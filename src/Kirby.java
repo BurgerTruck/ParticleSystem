@@ -11,8 +11,8 @@ public class Kirby {
 
 
 
-    private double spriteSpeedX = 75;
-    private double spriteSpeedY = 75;
+    private double spriteSpeedX = 50;
+    private double spriteSpeedY = 50;
     private boolean isWalking = false;
 
     private int frameCol = 0;
@@ -102,12 +102,12 @@ public class Kirby {
 
 
     }
-    public double getX() {
-        return x;
+    public int getX() {
+        return (int) x;
     }
 
-    public double getY() {
-        return y;
+    public int getY() {
+        return (int) y;
     }
 
 

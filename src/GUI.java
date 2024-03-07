@@ -17,9 +17,10 @@ public class GUI extends JFrame {
     private JToggleButton explorerModeButton;
     private Controller controller;
 
-    public GUI(){
+    public GUI(Controller controller){
         this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
         this.setVisible(true);
+
         this.setDefaultCloseOperation(3);
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -34,6 +35,8 @@ public class GUI extends JFrame {
         }
 
         canvas = new CanvasPanel(canvasWidth, canvasHeight);
+        setController(controller);
+        controller.setCanvas(canvas);
         initPointPanel();
         initWallPanel();
         initBatchPanel();
@@ -61,10 +64,7 @@ public class GUI extends JFrame {
         this.repaint();
         this.revalidate();
     }
-    public static void main(String[] args) {
-        System.out.println("Hello world!");
-        GUI gui = new GUI();
-    }
+
     private void initPointPanel(){
         addPointPanel = new JPanel();
         addPointPanel.setLayout(new BoxLayout(addPointPanel, BoxLayout.Y_AXIS));

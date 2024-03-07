@@ -4,7 +4,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.Key;
 import java.util.ArrayList;
 
-public class Controller {
+public class Controller implements Runnable{
     private Kirby playerKirby;
     private ArrayList<Kirby> otherKirbies;
 
@@ -18,40 +18,19 @@ public class Controller {
     private CanvasPanel canvas;
     private int frames = 0;
     private Thread[] threads;
-    public Controller(World world, GUI gui  ){
-        this.world = world;
-        this.canvas = gui.getCanvas();
-        gui.setController(this);
+
+    private boolean wHeld;
+    private boolean aHeld;
+    private boolean dHeld;
+    private boolean sHeld;
+    public Controller(){
 
         playerKirby  = new Kirby()  ;
         otherKirbies = new ArrayList<>();
         threads = new Thread[Config.NUM_THREADS];
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(true){
-                    canvas.clearBackBuffer();
-                    double elapsed = getElapsed();
-                    updateParticlesAndDrawToBuffer(elapsed);
-                    joinThreads();
-                    playerKirby.updateAnimation(elapsed);
-                    playerKirby.updateSpritePosition(elapsed);
-                    canvas.drawFrontBuffer();
-                    try {
-                        SwingUtilities.invokeAndWait(new Runnable() {
-                            @Override
-                            public void run() {
-                                canvas.repaint();
-                            }
-                        });
-                    } catch (InterruptedException | InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    }
-                    frames++;
-                }
-            }
-        }).start();
+        isExplorer = false;
+        updateViewBox();
     }
 
     private double getElapsed(){
@@ -107,10 +86,10 @@ public class Controller {
 
     private void updateViewBox(){
         if(isExplorer) {
-            bottomLeftX = (int) (playerKirby.getX() - Config.halfEWidth);
-            bottomLeftY = (int) (playerKirby.getY() - Config.halfEHeight);
-            topRightX = (int) (playerKirby.getX() + Config.halfEWidth);
-            topRightY = (int) (playerKirby.getY() + Config.halfEHeight);
+            bottomLeftX = ( (int)playerKirby.getX() - Config.halfEWidth);
+            bottomLeftY =  ((int)playerKirby.getY() - Config.halfEHeight);
+            topRightX =  ((int)playerKirby.getX() + Config.halfEWidth);
+            topRightY =  ((int)playerKirby.getY() + Config.halfEHeight);
         }else{
             bottomLeftX = 0;
             bottomLeftY = 0;
@@ -127,16 +106,16 @@ public class Controller {
         return true;
     }
     public void keyPressed(KeyEvent e){
-        if(e.getKeyCode()==KeyEvent.VK_W) playerKirby.wHeld = true;
-        if(e.getKeyCode() == KeyEvent.VK_A) playerKirby.aHeld = true;
-        if(e.getKeyCode() == KeyEvent.VK_D) playerKirby.dHeld = true;
-        if(e.getKeyCode() ==KeyEvent.VK_S) playerKirby.sHeld = true;
+        if(e.getKeyCode()==KeyEvent.VK_W) wHeld = true;
+        if(e.getKeyCode() == KeyEvent.VK_A) aHeld = true;
+        if(e.getKeyCode() == KeyEvent.VK_D) dHeld = true;
+        if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = true;
     }
     public void keyReleased(KeyEvent e){
-        if(e.getKeyCode()==KeyEvent.VK_W) playerKirby.wHeld = false;
-        if(e.getKeyCode() == KeyEvent.VK_A) playerKirby.aHeld = false;
-        if(e.getKeyCode() == KeyEvent.VK_D) playerKirby.dHeld = false;
-        if(e.getKeyCode() ==KeyEvent.VK_S) playerKirby.sHeld = false;
+        if(e.getKeyCode()==KeyEvent.VK_W) wHeld = false;
+        if(e.getKeyCode() == KeyEvent.VK_A) aHeld = false;
+        if(e.getKeyCode() == KeyEvent.VK_D) dHeld = false;
+        if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = false;
     }
 
     public boolean isExplorer() {
@@ -182,8 +161,49 @@ public class Controller {
             height = GUI.canvasHeight;
         }
         
-        int localX = (int) ((x - bottomLeftX) / width  *  GUI.canvasWidth);
-        int localY= (int) ((y - bottomLeftY)/ height * GUI.canvasHeight);
+        int localX = (int) (((x - bottomLeftX) / width  *  GUI.canvasWidth));
+        int localY= (int) (((y - bottomLeftY)/ height * GUI.canvasHeight));
         return new int[]{localX, localY};
+    }
+
+    public Kirby getPlayerKirby() {
+        return playerKirby;
+    }
+
+    public void setCanvas(CanvasPanel canvas) {
+        this.canvas = canvas;
+        new Thread(this).start();
+    }
+
+    public void setWorld(World world) {
+        this.world = world;
+    }
+
+    @Override
+    public void run() {
+        while(true){
+            if(canvas==null) continue;
+            canvas.clearBackBuffer();
+            double elapsed = getElapsed();
+            updateParticlesAndDrawToBuffer(elapsed);
+            joinThreads();
+            playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
+            playerKirby.updateSpritePosition(elapsed);
+            updateViewBox();
+            playerKirby.updateAnimation(elapsed);
+
+            canvas.drawFrontBuffer();
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        canvas.repaint();
+                    }
+                });
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e);
+            }
+            frames++;
+        }
     }
 }
