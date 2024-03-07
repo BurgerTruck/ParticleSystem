@@ -111,6 +111,11 @@ public class Controller {
             bottomLeftY = (int) (playerKirby.getY() - Config.halfEHeight);
             topRightX = (int) (playerKirby.getX() + Config.halfEWidth);
             topRightY = (int) (playerKirby.getY() + Config.halfEHeight);
+        }else{
+            bottomLeftX = 0;
+            bottomLeftY = 0;
+            topRightX = GUI.canvasWidth-1;
+            topRightY = GUI.canvasHeight-1;
         }
     }
 
@@ -166,5 +171,19 @@ public class Controller {
         return frames;
     }
 
-    public int[][]
+    public int[] translatePositionToLocal(double x, double y){
+        int width;
+        int height;
+        if(isExplorer){
+            width = Config.eWidth;
+            height = Config.eHeight;
+        }else{
+            width = GUI.canvasWidth;
+            height = GUI.canvasHeight;
+        }
+        
+        int localX = (int) ((x - bottomLeftX) / width  *  GUI.canvasWidth);
+        int localY= (int) ((y - bottomLeftY)/ height * GUI.canvasHeight);
+        return new int[]{localX, localY};
+    }
 }

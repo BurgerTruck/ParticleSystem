@@ -9,8 +9,7 @@ public class Kirby {
     public static final int NUM_FRAMES_IDLE = 4;
     public static final int NUM_FRAMES_WALKING = 10;
 
-    public static final int DRAW_WIDTH = 128;
-    public static final int DRAW_HEIGHT = 128;
+
 
     private double spriteSpeedX = 75;
     private double spriteSpeedY = 75;

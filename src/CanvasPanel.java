@@ -205,8 +205,15 @@ public class CanvasPanel extends JPanel {
         if(controller.isExplorer())kirby.drawSprite(g2);
 
     }
-    private void drawKirby(){
+    private void drawKirby(Graphics2D g, Kirby kirby){
+        double x = kirby.getX();
+        double y = kirby.getY();
 
+        if(!controller.inViewBox((int) x, (int) y, Config.HALF_DRAW_KIRBY_WIDTH, Config.HALF_DRAW_KIRBY_HEIGHT )) return;
+        int[] localPosition = controller.translatePositionToLocal(kirby.getX(), kirby.getY());
+        int drawX = localPosition[0];
+        int drawY = localPosition[1];
+        kirby.drawSprite(g, drawX );
     }
 
     private boolean leftClicked = false;
