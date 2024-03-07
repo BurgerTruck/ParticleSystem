@@ -1,23 +1,19 @@
 import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
-import java.security.Key;
 import java.util.ArrayList;
 
 public class Controller implements Runnable{
     private Kirby playerKirby;
-    private ArrayList<Kirby> otherKirbies;
-
     private long prevStart = -1;
-    private int bottomLeftX;
-    private int bottomLeftY;
-    private int topRightX ;
-    private int topRightY ;
+    private double bottomLeftX;
+    private double bottomLeftY;
+    private double topRightX ;
+    private double topRightY ;
     private boolean isExplorer;
     private World world;
     private CanvasPanel canvas;
     private int frames = 0;
-    private Thread[] threads;
 
     private boolean wHeld;
     private boolean aHeld;
@@ -26,11 +22,10 @@ public class Controller implements Runnable{
     public Controller(){
 
         playerKirby  = new Kirby()  ;
-        otherKirbies = new ArrayList<>();
-        threads = new Thread[Config.NUM_THREADS];
-
         isExplorer = false;
         updateViewBox();
+
+
     }
 
     private double getElapsed(){
@@ -39,33 +34,6 @@ public class Controller implements Runnable{
         double elapsed =   (curr - prevStart) / 1000000000d;
         prevStart = curr;
         return elapsed;
-    }
-
-    private void joinThreads(){
-        for (Thread thread : threads) {
-            if(thread==null) break;
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private void updateParticlesAndDrawToBuffer(double elapsed){
-
-        for (int i = 0; i < Config.NUM_THREADS; i++) {
-            if(i >=world.getParticles().size()) break;
-            int finalI = i;
-            threads[i] = new Thread(() -> {
-                for (int j = finalI; j < world.getParticles().size(); j += Config.NUM_THREADS) {
-                    Particle particle = world.getParticles().get(j);
-                    particle.move(world.getWalls(), elapsed);
-                    canvas.drawParticle(particle, finalI);
-                }
-            });
-            threads[i].start();
-        }
     }
 
     public void addParticle(Particle p){
@@ -86,10 +54,10 @@ public class Controller implements Runnable{
 
     private void updateViewBox(){
         if(isExplorer) {
-            bottomLeftX = ( (int)playerKirby.getX() - Config.halfEWidth);
-            bottomLeftY =  ((int)playerKirby.getY() - Config.halfEHeight);
-            topRightX =  ((int)playerKirby.getX() + Config.halfEWidth);
-            topRightY =  ((int)playerKirby.getY() + Config.halfEHeight);
+            bottomLeftX = ( playerKirby.getX() - Config.halfEWidth);
+            bottomLeftY =  (playerKirby.getY() - Config.halfEHeight);
+            topRightX =  (playerKirby.getX() + Config.halfEWidth);
+            topRightY =  (playerKirby.getY() + Config.halfEHeight);
         }else{
             bottomLeftX = 0;
             bottomLeftY = 0;
@@ -98,10 +66,10 @@ public class Controller implements Runnable{
         }
     }
 
-    public boolean inViewBox(int x, int y, int halfWidth, int halfHeight){
-        if(x + halfWidth < bottomLeftX) return false;
+    public boolean inViewBox(double x, double y, int halfWidth, int halfHeight){
+        if(x + halfWidth < bottomLeftX-1) return false;
         if(x - halfWidth> topRightX+1) return false;
-        if(y + halfHeight < bottomLeftY) return false;
+        if(y + halfHeight < bottomLeftY-1) return false;
         if(y - halfHeight > topRightY+1) return false;
         return true;
     }
@@ -123,19 +91,19 @@ public class Controller implements Runnable{
     }
 
     public int getBottomLeftY() {
-        return bottomLeftY;
+        return (int) bottomLeftY;
     }
 
     public int getBottomLeftX() {
-        return bottomLeftX;
+        return (int) bottomLeftX;
     }
 
     public int getTopRightX() {
-        return topRightX;
+        return (int) topRightX;
     }
 
     public int getTopRightY() {
-        return topRightY;
+        return (int) topRightY;
     }
 
     public ArrayList<Particle> getParticles(){
@@ -160,9 +128,9 @@ public class Controller implements Runnable{
             width = GUI.canvasWidth;
             height = GUI.canvasHeight;
         }
-        
-        int localX = (int) (((x - bottomLeftX) / width  *  GUI.canvasWidth));
-        int localY= (int) (((y - bottomLeftY)/ height * GUI.canvasHeight));
+        int localX = (int) ((x - bottomLeftX+1) / width  *  GUI.canvasWidth);
+        int localY= (int) ((y - bottomLeftY+1)/ height * GUI.canvasHeight);
+
         return new int[]{localX, localY};
     }
 
@@ -177,21 +145,26 @@ public class Controller implements Runnable{
 
     public void setWorld(World world) {
         this.world = world;
+        world.addKirby(playerKirby);
+        for(int i = 0; i < 5; i++){
+            Kirby kirby= new Kirby()    ;
+            world.addKirby(kirby);
+            kirby.setX(Math.random()*GUI.canvasWidth);
+            kirby.setY(Math.random()*GUI.canvasHeight);
+        }
+        Kirby kirby = new Kirby()   ;
+        kirby.setX(645);
+        kirby.setY(365);
+        world.addKirby(kirby);
     }
 
     @Override
     public void run() {
         while(true){
-            if(canvas==null) continue;
             canvas.clearBackBuffer();
-            double elapsed = getElapsed();
-            updateParticlesAndDrawToBuffer(elapsed);
-            joinThreads();
             playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
-            playerKirby.updateSpritePosition(elapsed);
+            world.update(getElapsed());
             updateViewBox();
-            playerKirby.updateAnimation(elapsed);
-
             canvas.drawFrontBuffer();
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
@@ -205,5 +178,12 @@ public class Controller implements Runnable{
             }
             frames++;
         }
+    }
+    public ArrayList<Kirby> getKirbies(){
+        return world.getKirbies();
+    }
+
+    public CanvasPanel getCanvas() {
+        return canvas;
     }
 }

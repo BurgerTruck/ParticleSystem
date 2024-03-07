@@ -183,27 +183,27 @@ public class CanvasPanel extends JPanel {
         }
         if(!controller.isExplorer()){
             g2.setColor(Color.RED);
-            g2.drawRect(controller.getBottomLeftX(), getHeight() - controller.getTopRightY(),
-                    controller.getTopRightX()-controller.getBottomLeftX(),
-                    controller.getTopRightY()-controller.getBottomLeftY());
+            g2.drawRect((int) (controller.getPlayerKirby().getX()-Config.halfEWidth),
+                    (int) (getHeight() - (controller.getPlayerKirby().getY()+Config.halfEHeight)),
+                    Config.eWidth,
+                    Config.eHeight);
+//            controller.setExplorer(false);
+        }
+
+        for(Kirby kirby: controller.getKirbies()){
+            if(kirby==controller.getPlayerKirby())continue;
+            drawKirby(g2, kirby);
         }
         drawKirby(g2, controller.getPlayerKirby());
-
     }
     private void drawKirby(Graphics2D g, Kirby kirby){
         double x = kirby.getX();
         double y = kirby.getY();
-        System.out.println(x);
-        System.out.println(y);
-        System.out.println();
-        if(!controller.inViewBox((int) x, (int) y, Config.halfKirbyWidth, Config.halfKirbyHeight)) return;
+        if(!controller.inViewBox( x,  y, Config.halfKirbyWidth, Config.halfKirbyHeight)) return;
         int[] localPosition = controller.translatePositionToLocal(kirby.getX(), kirby.getY());
         int drawX = localPosition[0];
         int drawY = localPosition[1];
 
-        System.out.println(drawX);
-        System.out.println(drawY);
-        System.out.println();
         int halfWidth;
         int halfHeight;
         if(controller.isExplorer()){
