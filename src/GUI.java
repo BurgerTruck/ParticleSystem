@@ -15,6 +15,8 @@ public class GUI extends JFrame {
     private JPanel addBatchPanel;
     private CanvasPanel canvas;
     private JToggleButton explorerModeButton;
+    private Controller controller;
+
     public GUI(){
         this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
         this.setVisible(true);
@@ -89,7 +91,7 @@ public class GUI extends JFrame {
             double speed = Double.parseDouble(speedField.getInput());
             double angle = Double.parseDouble(angleField.getInput());
             Particle particle = new Particle(new Position(x,y), speed, angle);
-            canvas.addParticle(particle);
+            controller.addParticle(particle);
         });
         addPointPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Particle"));
 
@@ -124,7 +126,7 @@ public class GUI extends JFrame {
             double  x2 = Double.parseDouble(x2Field.getInput());
             double y2 = Double.parseDouble(y2Field.getInput());
 
-            canvas.addWall(new Wall(new Position(x1,y1), new Position(x2,y2)));
+            controller.addWall(new Wall(new Position(x1,y1), new Position(x2,y2)));
         });
         addWallPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Wall"));
 
@@ -191,8 +193,8 @@ public class GUI extends JFrame {
                 x1+=xStep; y1+=yStep; v1+=vStep; angle1+=angleStep;
                 particles.add(particle);
             }
-            synchronized (canvas.getParticles()){
-                canvas.addParticles(particles);
+            synchronized (controller.getParticles()){
+                controller.addParticles(particles);
             }
         });
         addBatchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Batch"));
@@ -203,11 +205,19 @@ public class GUI extends JFrame {
          explorerModeButton.addChangeListener(new ChangeListener() {
              @Override
              public void stateChanged(ChangeEvent e) {
-                 canvas.setExplorer(explorerModeButton.isSelected());
+                 controller.setExplorer(explorerModeButton.isSelected());
                  canvas.requestFocus();
 //                 canvas.resetHeldKeys();
              }
          });
     }
 
+    public CanvasPanel getCanvas() {
+        return canvas;
+    }
+
+    public void setController(Controller controller) {
+        this.controller = controller;
+        canvas.setController(controller);
+    }
 }

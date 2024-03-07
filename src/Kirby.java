@@ -12,20 +12,25 @@ public class Kirby {
     public static final int DRAW_WIDTH = 128;
     public static final int DRAW_HEIGHT = 128;
 
-    public static final int DRAW_X = (GUI.canvasWidth>>1)-(DRAW_WIDTH>>1);
-    public static final int DRAW_Y = (GUI.canvasHeight>>1)-(DRAW_HEIGHT>>1);
-    public static final int DRAW_END_X = DRAW_X + DRAW_WIDTH;
-    public static final int DRAW_END_Y = DRAW_Y + DRAW_HEIGHT;
-
+    private double spriteSpeedX = 75;
+    private double spriteSpeedY = 75;
     private boolean isWalking = false;
 
     private int frameCol = 0;
     private int frameRow = 0;
 
+    private double x = GUI.canvasWidth/2;
+    private double y = GUI.canvasHeight/2;
+
 
     private double animationSeconds = 0;
     private static double[] walkingFrameDurations;
     private static double[] idleFrameDurations;
+
+    public boolean wHeld = false;
+    public boolean aHeld = false;
+    public boolean sHeld = false;
+    public boolean dHeld = false;
 
     static{
         walkingFrameDurations = new double[NUM_FRAMES_WALKING];
@@ -38,6 +43,10 @@ public class Kirby {
     }
     private boolean horizontalFlipped = false;
     public void updateDirectionsHeld(boolean w, boolean a, boolean s, boolean d){
+        wHeld = w;
+        aHeld = a;
+        sHeld = s;
+        dHeld = d;
         if(w || a || s || d) setWalking( true);
         else setWalking(false);
 
@@ -74,7 +83,7 @@ public class Kirby {
 
     }
 
-    public void drawSprite(Graphics2D g){
+    public void drawSprite(Graphics2D g, int DRAW_X, int DRAW_END_X, int DRAW_Y, int DRAW_END_Y){
         int sx = frameCol * FRAME_WIDTH;
         int sy = frameRow * FRAME_WIDTH;
         int startX = DRAW_X, endX = DRAW_END_X;
@@ -85,4 +94,22 @@ public class Kirby {
         g.drawImage(SPRITE_SHEET, startX, DRAW_Y, endX, DRAW_END_Y,
                 sx, sy, sx + FRAME_WIDTH, sy + FRAME_HEIGHT, null   );
     }
+
+    public void updateSpritePosition(double elapsed){
+        if(wHeld)y +=spriteSpeedY * elapsed;
+        if(aHeld)x -=spriteSpeedX*elapsed;
+        if(sHeld)y -=spriteSpeedY * elapsed;
+        if(dHeld)x +=spriteSpeedY*elapsed;
+
+
+    }
+    public double getX() {
+        return x;
+    }
+
+    public double getY() {
+        return y;
+    }
+
+
 }

@@ -7,47 +7,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 public class CanvasPanel extends JPanel {
-    public static final int NUM_THREADS = 8;
 
-    private ArrayList<Particle> particles;
-    private ArrayList<Wall> walls;
 
     private JPanel fpsPanel;
     private JLabel fpsLabel;
-
-    private Thread[]     threads = new Thread[NUM_THREADS];
-    private long prevStart = -1;
-    private int frames = 0;
-
     private final BufferedImage buffer;
     private final BufferedImage frontBuffer;
-    private final int length = GUI.canvasWidth * GUI.canvasHeight;
-    private boolean isExplorer;
-
-    public static final int eWidth = 33;
-    public static final int eHeight = 19;
-    private final int halfEWidth = eWidth>>1;
-    private final int halfEHeight = eHeight>>1;
-
-    //topleft is (0,0)
-    private double spriteX = GUI.canvasWidth/2;
-    private double spriteY = GUI.canvasHeight/2;
-
-    private int bottomLeftX = (int) (spriteX - halfEWidth);
-    private int bottomLeftY = (int) (spriteY - halfEHeight);
-    private int topRightX = (int) (spriteX + halfEWidth);
-    private int topRightY = (int) (spriteY + halfEHeight);
-
-    private boolean wHeld = false;
-    private boolean aHeld = false;
-    private boolean sHeld = false;
-    private boolean dHeld = false;
-
+    private Controller controller;
     private Graphics2D[] bufferGraphics;
-
     private int pixelSize;
-    private double spriteSpeedX = 75;
-    private double spriteSpeedY = 75;
     private Kirby kirby;
     public CanvasPanel(int width, int height){
         super(true);
@@ -57,6 +25,7 @@ public class CanvasPanel extends JPanel {
         setMinimumSize(d);
         setMaximumSize(d);
         setBackground(Color.WHITE);
+        this.controller = controller;
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         fpsPanel = new JPanel();
@@ -65,77 +34,43 @@ public class CanvasPanel extends JPanel {
         fpsPanel.setAlignmentX(RIGHT_ALIGNMENT);
         fpsPanel.setMaximumSize(new Dimension(30,20));
         add(fpsPanel);
-        particles = new ArrayList<>();
-        walls = new ArrayList<>();
+
 
         buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
         frontBuffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
 
-        bufferGraphics = new Graphics2D[NUM_THREADS];
-        for(int i = 0; i < NUM_THREADS; i++){
+        bufferGraphics = new Graphics2D[Config.NUM_THREADS];
+        for(int i = 0; i < Config.NUM_THREADS; i++){
             bufferGraphics[i] = buffer.createGraphics();
             bufferGraphics[i].setBackground(Color.WHITE);
             bufferGraphics[i].setColor(Color.BLACK);
         }
 
         kirby = new Kirby();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(true){
-                    bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
-                    double elapsed = getElapsed();
 
-                    updateParticlesAndDrawToBuffer(elapsed);
-                    joinThreads();
-                    kirby.updateAnimation(elapsed);
-                    updateSpritePosition(elapsed);
-                    drawFrontBuffer();
-                    try {
-                        SwingUtilities.invokeAndWait(new Runnable() {
-                            @Override
-                            public void run() {
-                                repaint();
-                            }
-                        });
-                    } catch (InterruptedException | InvocationTargetException e) {
-                        throw new RuntimeException(e);
-                    }
-                    frames++;
-                }
-            }
-        }).start();
 
         //fps timer
         new Timer(500, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                fpsLabel.setText(String.valueOf(frames*2));
-                frames = 0;
+                fpsLabel.setText(String.valueOf(controller.getFrames()*2));
+                controller.resetFrames();
             }
         }).start();
 
         initializeListeners();
         setBorder(BorderFactory.createLineBorder(Color.BLACK,1));
 
-        pixelSize = (int) ((double)GUI.canvasWidth/eWidth);
+        pixelSize = (int) ((double)GUI.canvasWidth/Config.eWidth);
         if((pixelSize&1)==0)pixelSize++;
 
 
     }
 
-    public void addParticle(Particle p){
-        particles.add(p);
-    }
-    public void addParticles(java.util.List<Particle> particleList){
-        particles.addAll(particleList);
-    }
 
-    public void addWall(Wall wall){
-        walls.add(wall);
-        drawWall( wall);
-    }
-    private void drawWall(Wall wall){
+
+
+    public void drawWall(Wall wall){
 //        g.drawLine((int) wall.p1.x, (int) (getHeight()- wall.p1.y), (int) wall.p2.x, (int) (getHeight()-wall.p2.y));
         int x2 = (int) wall.p2.x, x1 = (int) wall.p1.x;
         int y2 = getHeight() - (int)  wall.p2.y,  y1 =  getHeight() - (int) wall.p1.y;
@@ -176,20 +111,20 @@ public class CanvasPanel extends JPanel {
     private final int halfParticleWidth = particleWidth>>1;
     private final int halfParticleHeight = particleHeight>>1;
 
-    private int eParticleWidth = (int) ((double)GUI.canvasWidth/eWidth * particleWidth);
+    private int eParticleWidth = (int) ((double)GUI.canvasWidth/Config.eWidth * particleWidth);
     private int eParticleHeight = eParticleWidth;
 
-    private void drawParticle(Particle p, Graphics2D g){
-        drawPixel(p.p, g);
+    public void drawParticle(Particle p, int bufferGraphicsIndex){
+        drawPixel(p.p, bufferGraphics[bufferGraphicsIndex]);
     }
     private void fillRect(int x, int y, int width, int height, Graphics2D g){
 
         g.fillRect(x, y, width, height);
     }
-    private void drawFrontBuffer(){
+    public void drawFrontBuffer(){
 
         Graphics2D g = (Graphics2D) frontBuffer.getGraphics();
-        if(!isExplorer){
+        if(!controller.isExplorer()){
            g.drawImage(buffer, 0,0, null);
         }else{
             synchronized (frontBuffer){
@@ -197,8 +132,8 @@ public class CanvasPanel extends JPanel {
                 g.clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
                 int row = 0;
                 int col = 0;
-                for(int y = bottomLeftY; y<=topRightY; y++, row+=pixelSize){
-                    for(int x = bottomLeftX; x<=topRightX; x++, col+=pixelSize){
+                for(int y = controller.getBottomLeftY(); y<=controller.getTopRightY(); y++, row+=pixelSize){
+                    for(int x = controller.getBottomLeftX(); x<=controller.getTopRightX(); x++, col+=pixelSize){
                         if(x < 0 || y < 0 || x>=GUI.canvasWidth || y>=GUI.canvasHeight){
                             g.setColor(Color.BLACK);
                             g.fillRect(col, getHeight()- row - pixelSize, pixelSize, pixelSize);
@@ -224,12 +159,7 @@ public class CanvasPanel extends JPanel {
 
         int halfHeight = height>>1;
         int halfWidth = width>>1;
-        if(isExplorer){
-            if(x + halfWidth < bottomLeftX) return false;
-            if(x - halfWidth> topRightX+1) return false;
-            if(y + halfHeight < bottomLeftY) return false;
-            if(y - halfHeight > topRightY+1) return false;
-        }
+        if(!controller.inViewBox(x, y, halfWidth, halfHeight)) return false;
         y = getHeight() - y;
 
         int endX = Math.min(x + halfWidth, GUI.canvasWidth-1);
@@ -241,53 +171,22 @@ public class CanvasPanel extends JPanel {
         width = endX - x+1;
         height = endY - y+1;
         if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0) return false;
-
         int midX = endX + x >>1;
         int midY = endY + y >>1;
-        if(   buffer.getRGB(midX, midY )!=-1)return false;
-
+        if(buffer.getRGB(midX, midY )!=-1)return false;
         fillRect(x, y, width, height, g);
         return true;
     }
 
-    private void joinThreads(){
-        for (Thread thread : threads) {
-            if(thread==null) break;
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    private void updateParticlesAndDrawToBuffer(double elapsed){
 
-        for (int i = 0; i < NUM_THREADS; i++) {
-            if(i >=particles.size()) break;
-            int finalI = i;
-            threads[i] = new Thread(() -> {
-                for (int j = finalI; j < particles.size(); j += NUM_THREADS) {
-                    particles.get(j).move(walls, elapsed);
-                    drawParticle( particles.get(j), bufferGraphics[finalI]);
-                }
-            });
-            threads[i].start();
-        }
-    }
-    private double getElapsed(){
-        long curr = System.nanoTime();
 
-        double elapsed =   (curr - prevStart) / 1000000000d;
-        prevStart = curr;
-        return elapsed;
-    }
     private BasicStroke stroke = new BasicStroke(3);
 
     @Override
     public void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
-        if(isExplorer){
+        if(controller.isExplorer()){
             synchronized (frontBuffer){
                 g2.drawImage(frontBuffer, null, 0,0);
             }
@@ -299,34 +198,23 @@ public class CanvasPanel extends JPanel {
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
-        if(!isExplorer){
+        if(!controller.isExplorer()){
             g2.setColor(Color.RED);
-            g2.drawRect(bottomLeftX, getHeight() - topRightY,eWidth, eHeight);
-//            g2.fillRect((int) bottomLeftX, (int) (getHeight() - bottomLeftY), 5,5);
+            g2.drawRect(controller.getBottomLeftX(), getHeight() - controller.getTopRightY(),Config.eWidth, Config.eHeight);
         }
-        if(isExplorer)kirby.drawSprite(g2);
+        if(controller.isExplorer())kirby.drawSprite(g2);
 
     }
+    private void drawKirby(){
 
+    }
 
     private boolean leftClicked = false;
     private boolean rightClicked = true;
     private Point  clicked = null;
 
 
-    private void updateSpritePosition(double elapsed){
-        if(wHeld)spriteY +=spriteSpeedY * elapsed;
-        if(aHeld)spriteX -=spriteSpeedX*elapsed;
-        if(sHeld)spriteY -=spriteSpeedY * elapsed;
-        if(dHeld)spriteX +=spriteSpeedY*elapsed;
 
-        kirby.updateDirectionsHeld(wHeld, aHeld, sHeld, dHeld);
-        bottomLeftX = (int) (spriteX - halfEWidth);
-        bottomLeftY = (int) (spriteY - halfEHeight);
-        topRightX = (int) (spriteX + halfEWidth);
-        topRightY = (int) (spriteY + halfEHeight);
-
-    }
     private void initializeListeners(){
         addKeyListener(new KeyListener() {
             @Override
@@ -336,18 +224,12 @@ public class CanvasPanel extends JPanel {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                if(e.getKeyCode()==KeyEvent.VK_W) wHeld = true;
-                if(e.getKeyCode() == KeyEvent.VK_A) aHeld = true;
-                if(e.getKeyCode() == KeyEvent.VK_D) dHeld = true;
-                if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = true;
+                controller.keyPressed(e);
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
-                if(e.getKeyCode()==KeyEvent.VK_W) wHeld = false;
-                if(e.getKeyCode() == KeyEvent.VK_A) aHeld = false;
-                if(e.getKeyCode() == KeyEvent.VK_D) dHeld = false;
-                if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = false;
+                controller.keyReleased(e);
             }
         });
 
@@ -370,10 +252,11 @@ public class CanvasPanel extends JPanel {
 
                 if(leftClicked){
                     leftClicked = false;
-                    addParticle(new Particle(new Position(clicked.x, getHeight()-clicked.y), clicked.distance(mouse ), Math.toDegrees(Math.atan2((getHeight()-mouse.y)-(getHeight()-clicked.y),mouse.x-clicked.x))));
+                    controller.addParticle(new Particle(new Position(clicked.x, getHeight()-clicked.y), clicked.distance(mouse ), Math.toDegrees(Math.atan2((getHeight()-mouse.y)-(getHeight()-clicked.y),mouse.x-clicked.x))));
+
                 }else if(rightClicked){
                     rightClicked = false;
-                    addWall(new Wall(new Position(clicked.x, getHeight()-clicked.y), new Position(mouse.x, getHeight()-mouse.y)));
+                    controller.addWall(new Wall(new Position(clicked.x, getHeight()-clicked.y), new Position(mouse.x, getHeight()-mouse.y)));
                 }
                 clicked = null;
             }
@@ -385,17 +268,11 @@ public class CanvasPanel extends JPanel {
 
     }
 
-    public ArrayList<Particle> getParticles() {
-        return particles;
+    public void setController(Controller controller) {
+        this.controller = controller;
     }
 
-    public void setExplorer(boolean explorer) {
-        isExplorer = explorer;
-    }
-    public void resetHeldKeys(){
-        aHeld = false;
-        wHeld = false;
-        sHeld = false;
-        dHeld = false;
+    public void clearBackBuffer(){
+        bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
     }
 }
