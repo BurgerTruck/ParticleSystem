@@ -42,8 +42,8 @@ public class CanvasPanel extends JPanel {
 
     private Graphics2D[] bufferGraphics;
 
-    private double spriteSpeedX = 75;
-    private double spriteSpeedY = 75;
+    private double spriteSpeedX = 30;
+    private double spriteSpeedY = 30;
     private Kirby kirby;
     public CanvasPanel(int width, int height){
         super(true);
@@ -191,8 +191,8 @@ public class CanvasPanel extends JPanel {
         int x;
         int y;
         if(isExplorer){
-            x = (int) ((p.x - bottomLeftX) / eWidth  *  GUI.canvasWidth);
-            y = (int) ((p.y - bottomLeftY)/ eHeight * GUI.canvasHeight);
+            x = (int) ((p.x - bottomLeftX+1) / eWidth  *  GUI.canvasWidth);
+            y = (int) ((p.y - bottomLeftY+1)/ eHeight * GUI.canvasHeight);
             width = eParticleWidth;
             height = eParticleHeight;
         }else{
@@ -202,20 +202,47 @@ public class CanvasPanel extends JPanel {
         y = getHeight() - y;
         int halfHeight = height>>1;
         int halfWidth = width>>1;
+        int endX = x+halfWidth;
+        int endY = y+halfHeight;
+        x = x-halfWidth;
+        y = y - halfHeight;
+        if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0){
+//            System.out.println(x);
+//            System.out.println(y);
+//            System.out.println("OUT OF SCREEN");
+            return false;
+        }
 
-        int endX = Math.min(x + halfWidth, GUI.canvasWidth-1);
-        int endY = Math.min(y + halfHeight, GUI.canvasHeight-1);
-        x = Math.max(0, Math.min(x - halfWidth, GUI.canvasWidth - 1));
-        y = Math.max(0, Math.min(y - halfHeight, GUI.canvasHeight - 1));
+        endX = Math.min(endX, GUI.canvasWidth-1);
+        endY = Math.min(endY, GUI.canvasHeight-1);
+        x = Math.max(0, Math.min(x, GUI.canvasWidth - 1));
+        y = Math.max(0, Math.min(y, GUI.canvasHeight - 1));
         endY = Math.max(0, endY);
         endX = Math.max(0, endX);
         width = endX - x+1;
         height = endY - y+1;
-        if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0) return false;
 
         int midX = endX + x >>1;
         int midY = endY + y >>1;
-        if(   buffer.getRGB(midX, midY )!=-1)return false;
+//
+
+        //        int checkIndex = index;
+
+        if(!isExplorer){
+            if(   buffer.getRGB(midX, midY )!=-1)return false;
+        }else{
+            int countFilled = 0;
+            int[] yValues = new int[]{y, midY, endY};
+            int[] xValues = new int[]{x, midX, endX};
+            for(int i=  0; i < 3; i++){
+                for(int j = 0; j <3; j++){
+                    if(buffer.getRGB(xValues[j], yValues[i])!=-1)countFilled++;
+                }
+            }
+            if(countFilled == 9 )return false   ;
+        }
+
+//        System.out.println(countFilled);
 
         fillRect(x, y, width, height, g);
 
