@@ -185,15 +185,19 @@ public class CanvasPanel extends JPanel {
         g.fillRect(x, y, width, height);
     }
     private boolean drawPixel(Position p, Graphics2D g){
-        int x = (int)(p.x);
-        int y = (int)(p.y);
+
         int width = particleWidth;
         int height = particleHeight;
+        int x;
+        int y;
         if(isExplorer){
-            x = (int) ((x - bottomLeftX) / eWidth  *  GUI.canvasWidth);
-            y = (int) ((y - bottomLeftY)/ eHeight * GUI.canvasHeight);
+            x = (int) ((p.x - bottomLeftX) / eWidth  *  GUI.canvasWidth);
+            y = (int) ((p.y - bottomLeftY)/ eHeight * GUI.canvasHeight);
             width = eParticleWidth;
             height = eParticleHeight;
+        }else{
+            x = (int)   p.x;
+            y = (int) p.y;
         }
         y = getHeight() - y;
         int halfHeight = height>>1;
