@@ -181,14 +181,14 @@ public class CanvasPanel extends JPanel {
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
-        if(!controller.isExplorer()){
-            g2.setColor(Color.RED);
-            g2.drawRect((int) (controller.getPlayerKirby().getX()-Config.halfEWidth),
-                    (int) (getHeight() - (controller.getPlayerKirby().getY()+Config.halfEHeight)),
-                    Config.eWidth,
-                    Config.eHeight);
-//            controller.setExplorer(false);
-        }
+//        if(!controller.isExplorer()){
+//            g2.setColor(Color.RED);
+//            g2.drawRect((int) (controller.getPlayerKirby().getX()-Config.halfEWidth),
+//                    (int) (getHeight() - (controller.getPlayerKirby().getY()+Config.halfEHeight)),
+//                    Config.eWidth,
+//                    Config.eHeight);
+////            controller.setExplorer(false);
+//        }
 
         for(Kirby kirby: controller.getKirbies()){
             if(kirby==controller.getPlayerKirby())continue;
@@ -197,6 +197,7 @@ public class CanvasPanel extends JPanel {
         drawKirby(g2, controller.getPlayerKirby());
     }
     private void drawKirby(Graphics2D g, Kirby kirby){
+        if(kirby==null) return;
         double x = kirby.getX();
         double y = kirby.getY();
         if(!controller.inViewBox( x,  y, Config.halfKirbyWidth, Config.halfKirbyHeight)) return;
@@ -232,12 +233,12 @@ public class CanvasPanel extends JPanel {
 
             @Override
             public void keyPressed(KeyEvent e) {
-                controller.keyPressed(e);
+                controller.keyInput(e, true);
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
-                controller.keyReleased(e);
+                controller.keyInput(e, false);
             }
         });
 

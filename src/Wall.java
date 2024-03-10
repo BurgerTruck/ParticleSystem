@@ -1,4 +1,6 @@
-public class Wall {
+import java.io.Serializable;
+
+public class Wall implements Serializable {
     Position p1;
     Position p2;
     Position normalVector;

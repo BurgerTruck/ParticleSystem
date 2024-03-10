@@ -18,8 +18,9 @@ public class GUI extends JFrame {
     private Controller controller;
 
     public GUI(Controller controller){
-        this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
+//        this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
         this.setVisible(true);
+//        setSize(canvasWidth, canvasHeight);
 
         this.setDefaultCloseOperation(3);
         try {
@@ -63,6 +64,8 @@ public class GUI extends JFrame {
 
         this.repaint();
         this.revalidate();
+        pack();
+
     }
 
     private void initPointPanel(){

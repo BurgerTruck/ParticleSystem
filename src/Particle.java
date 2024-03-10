@@ -1,6 +1,7 @@
+import java.io.Serializable;
 import java.util.ArrayList;
 
-public class Particle {
+public class Particle implements Serializable {
     Position p;
     Position prev;
     double speed; //pixels/s
@@ -28,7 +29,6 @@ public class Particle {
         Position next = getNextPosition(timePassed);
         Position temp = p;
         boolean collided = false;
-        
         for (int i = 0; i < walls.size(); i++) {
             Wall wall = walls.get(i);
             if (wall.checkIntersection(temp, next, wall.p1, wall.p2)) {
@@ -51,10 +51,8 @@ public class Particle {
             collided = true;
         }
 
-
         if(!collided){
             p = next;
-//            next = new Position(p.x + dx * timePassed, p.y + dy * timePassed);
             prev = p;
         }
 

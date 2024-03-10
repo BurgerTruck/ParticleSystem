@@ -1,14 +1,15 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.Serializable;
+import java.util.Objects;
 
-public class Kirby {
+public class Kirby implements Serializable {
     public static final Image SPRITE_SHEET = new ImageIcon("kirby_what.png").getImage();
     public static final int FRAME_WIDTH = 30;
     public static final int FRAME_HEIGHT = 30;
 
     public static final int NUM_FRAMES_IDLE = 4;
     public static final int NUM_FRAMES_WALKING = 10;
-
 
 
     private double spriteSpeedX = 30;
@@ -18,9 +19,7 @@ public class Kirby {
     private int frameCol = 0;
     private int frameRow = 0;
 
-    private double x = GUI.canvasWidth/2;
-    private double y = GUI.canvasHeight/2;
-
+    private Position p = new Position(GUI.canvasWidth/2, GUI.canvasHeight/2);
 
     private double animationSeconds = 0;
     private static double[] walkingFrameDurations;
@@ -30,7 +29,7 @@ public class Kirby {
     public boolean aHeld = false;
     public boolean sHeld = false;
     public boolean dHeld = false;
-
+    private boolean horizontalFlipped = false;
     static{
         walkingFrameDurations = new double[NUM_FRAMES_WALKING];
         idleFrameDurations = new double[NUM_FRAMES_IDLE];
@@ -40,7 +39,7 @@ public class Kirby {
 
         idleFrameDurations[0] = 3;
     }
-    private boolean horizontalFlipped = false;
+
     public void updateDirectionsHeld(boolean w, boolean a, boolean s, boolean d){
         wHeld = w;
         aHeld = a;
@@ -95,26 +94,35 @@ public class Kirby {
     }
 
     public void updateSpritePosition(double elapsed){
-        if(wHeld)y +=spriteSpeedY * elapsed;
-        if(aHeld)x -=spriteSpeedX*elapsed;
-        if(sHeld)y -=spriteSpeedY * elapsed;
-        if(dHeld)x +=spriteSpeedY*elapsed;
+        if(wHeld)p.y +=spriteSpeedY * elapsed;
+        if(aHeld)p.x -=spriteSpeedX*elapsed;
+        if(sHeld)p.y -=spriteSpeedY * elapsed;
+        if(dHeld)p.x +=spriteSpeedY*elapsed;
 
 
     }
     public double getX() {
-        return x;
+        return p.x;
     }
 
     public double getY() {
-        return y;
+        return p.y;
     }
 
     public void setX(double x) {
-        this.x = x;
+        p.x = x;
     }
 
     public void setY(double y) {
-        this.y = y;
+
+        p.y = y;
+    }
+
+    public Position getPosition() {
+        return p;
+    }
+
+    public void setPosition(Position p) {
+        this.p = p;
     }
 }

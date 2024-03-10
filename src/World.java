@@ -1,19 +1,22 @@
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 
-public class World {
+public class World implements Serializable {
     private ArrayList<Particle> particles;
     private ArrayList<Wall> walls;
-    private Controller controller;
-    private ArrayList<Kirby> kirbies;
-    private Thread[] threads;
+    public HashMap<Integer, Kirby> kirbies;
+
+    private transient Controller controller;
+    private static  Thread[] threads = new Thread[Config.NUM_THREADS];
     public World(Controller controller){
         particles = new ArrayList<>();
         walls = new ArrayList<>();
-        this.controller = controller;
-        kirbies = new ArrayList<>();
-        threads = new Thread[Config.NUM_THREADS];
-        controller.setWorld(this);
+        kirbies = new HashMap<>();
 
+        setController(controller);
     }
 
     public ArrayList<Particle> getParticles() {
@@ -24,13 +27,13 @@ public class World {
         return walls;
     }
 
-    public void addKirby(Kirby kirby){
-        kirbies.add(kirby);
+    public void addKirby(int id, Kirby kirby){
+        kirbies.put(id,  kirby);
     }
     public void update(double elapsed){
         updateParticlesAndDrawToBuffer(elapsed);
         joinThreads();
-        for(Kirby kirby: kirbies){
+        for(Kirby kirby: getKirbies()){
             kirby.updateSpritePosition(elapsed);
             kirby.updateAnimation(elapsed);
         }
@@ -61,7 +64,20 @@ public class World {
         }
     }
 
-    public ArrayList<Kirby> getKirbies() {
-        return kirbies;
+    public Collection<Kirby> getKirbies() {
+        return kirbies.values();
+    }
+
+    public void setController(Controller controller) {
+        this.controller = controller;
+        controller.setWorld(this);
+    }
+
+    public Kirby getKirby(int id){
+        return kirbies.get(id);
+    }
+
+    public void removeKirby(int id  ){
+        kirbies.remove(id);
     }
 }

@@ -5,5 +5,10 @@ public class Main {
         World world = new World(controller);
         GUI gui = new GUI(controller);
 
+        Kirby kirby = new Kirby();
+        world.addKirby(0, kirby);
+        controller.setPlayerKirby(kirby);
+
+        controller.start();
     }
 }
