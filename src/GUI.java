@@ -15,21 +15,12 @@ public class GUI extends JFrame {
     private JPanel addBatchPanel;
     private CanvasPanel canvas;
     private JToggleButton explorerModeButton;
-    public GUI(){
+    public GUI() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
         this.setVisible(true);
         this.setDefaultCloseOperation(3);
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        } catch (UnsupportedLookAndFeelException e) {
-            throw new RuntimeException(e);
-        }
+
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         canvas = new CanvasPanel(canvasWidth, canvasHeight);
         initPointPanel();
@@ -59,7 +50,7 @@ public class GUI extends JFrame {
         this.repaint();
         this.revalidate();
     }
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         System.out.println("Hello world!");
         GUI gui = new GUI();
     }
