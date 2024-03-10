@@ -191,8 +191,8 @@ public class CanvasPanel extends JPanel {
         int x;
         int y;
         if(isExplorer){
-            x = (int) ((p.x - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth-1));
-            y = (int) ((p.y - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight-1));
+            x = (int) ((p.x - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth));
+            y = (int) ((p.y - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight));
             width = eParticleWidth;
             height = eParticleHeight;
         }else{
