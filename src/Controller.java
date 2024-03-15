@@ -50,7 +50,7 @@ public class Controller implements Runnable{
     }
 
     private void updateViewBox(){
-        if(isExplorer) {
+        if(isExplorer()) {
             bottomLeftX = ( playerKirby.getX() - Config.halfEWidth);
             bottomLeftY =  (playerKirby.getY() - Config.halfEHeight);
             topRightX =  (playerKirby.getX() + Config.halfEWidth);
@@ -113,15 +113,15 @@ public class Controller implements Runnable{
     public int[] translatePositionToLocal(double x, double y){
         int width;
         int height;
-        if(isExplorer){
+        if(isExplorer()){
             width = Config.eWidth;
             height = Config.eHeight;
         }else{
             width = GUI.canvasWidth;
             height = GUI.canvasHeight;
         }
-        int localX = (int) ((x - bottomLeftX) / (width-1)  *  GUI.canvasWidth);
-        int localY= (int) ((y - bottomLeftY)/ (height-1) * GUI.canvasHeight);
+        int localX = (int) ((x - bottomLeftX) / (width-1)  *  (GUI.canvasWidth-1));
+        int localY= (int) ((y - bottomLeftY)/ (height-1) * (GUI.canvasHeight-1));
 
         return new int[]{localX, localY};
     }
@@ -142,7 +142,7 @@ public class Controller implements Runnable{
     }
     public void update(){
         canvas.clearBackBuffer();
-        playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
+        if(playerKirby!=null) playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
         world.update(getElapsed());
         updateViewBox();
         canvas.drawFrontBuffer();

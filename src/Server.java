@@ -15,7 +15,6 @@ public class Server{
     private ServerController serverController;
     private GUI serverGUI;
     private LinkedList<Message> messageQueue;
-    private DatagramSocket serverUdpSocket; //only for broadcasting inputs on the server to all clients
 
     private class ServerController extends Controller{
         @Override
@@ -26,7 +25,6 @@ public class Server{
                     switch(message.type){
                         case MOVE:
                             serverController.updateInput(message.clientId, ((MovementMessage)message).input);
-
                             break;
                     }
                 }
@@ -35,19 +33,8 @@ public class Server{
         }
 
         @Override
-        public void keyInput(KeyEvent e, boolean pressed) {
-            boolean prevW = iswHeld();
-            boolean prevA = isaHeld();
-            boolean prevS = issHeld();
-            boolean prevD = isdHeld();
-            super.keyInput(e, pressed);
-
-
-            if(iswHeld()!=prevW || isaHeld() != prevA || issHeld() !=prevS || isdHeld()!=prevD) {
-                Input input = new Input(iswHeld(), isaHeld(), issHeld(), isdHeld());
-                MovementMessage movementMessage = new MovementMessage(0,input, serverController.getPlayerKirby().getPosition() );
-                broadcastMessageUDP(null, movementMessage);
-            }
+        public boolean isExplorer() {
+            return false;
         }
     }
     public Server() throws IOException {
@@ -57,13 +44,9 @@ public class Server{
         serverWorld = new World(serverController);
         serverGUI = new GUI(serverController);
 
-        Kirby serverKirby = new Kirby();
-        serverWorld.addKirby(currId++, serverKirby);
-        serverController.setPlayerKirby(serverKirby);
         serverController.start();
 
         serverSocket = new ServerSocket(6969);
-        serverUdpSocket = new DatagramSocket();
         clients = new ArrayList<>();
 
         Thread listenThread = new Thread(new Runnable() {
@@ -183,8 +166,7 @@ public class Server{
                 if(clientHandler.isConnected){
                     packet.setPort(clientHandler.clientUdpPort);
                     packet.setAddress(clientHandler.socket.getInetAddress());
-                    if(sourceClientHandler!=null) sourceClientHandler.udpSocket.send(packet);
-                    else serverUdpSocket.send(packet);
+                    sourceClientHandler.udpSocket.send(packet);
                 }
             }
         } catch (IOException e) {
