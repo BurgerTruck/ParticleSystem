@@ -81,10 +81,11 @@ public class CanvasPanel extends JPanel {
                 while(true){
                     bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
                     double elapsed = getElapsed();
-                    updateParticlesAndDrawToBuffer(elapsed);
-                    joinThreads();
                     kirby.updateAnimation(elapsed);
                     updateSpritePosition(elapsed);
+
+                    updateParticlesAndDrawToBuffer(elapsed);
+                    joinThreads();
 
 
                     frontBuffer.getGraphics().drawImage(buffer, 0,0, null);
@@ -192,8 +193,8 @@ public class CanvasPanel extends JPanel {
         int x;
         int y;
         if(isExplorer){
-            x = (int) ((p.x - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth));
-            y = (int) ((p.y - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight));
+            x = (int) ((p.x - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth-1));
+            y = (int) ((p.y - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight-1));
             width = eParticleWidth;
             height = eParticleHeight;
         }else{
@@ -207,13 +208,10 @@ public class CanvasPanel extends JPanel {
         int endY = y+halfHeight;
         x = x-halfWidth;
         y = y - halfHeight;
+
         if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0){
-//            System.out.println(x);
-//            System.out.println(y);
-//            System.out.println("OUT OF SCREEN");
             return false;
         }
-
         endX = Math.min(endX, GUI.canvasWidth-1);
         endY = Math.min(endY, GUI.canvasHeight-1);
         x = Math.max(0, Math.min(x, GUI.canvasWidth - 1));
@@ -319,7 +317,6 @@ public class CanvasPanel extends JPanel {
             public void keyTyped(KeyEvent e) {
 
             }
-
             @Override
             public void keyPressed(KeyEvent e) {
                 if(!isExplorer) return;
