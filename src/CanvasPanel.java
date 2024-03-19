@@ -293,7 +293,17 @@ public class CanvasPanel extends JPanel {
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
-        if(isExplorer)kirby.drawSprite(g2);
+        if(isExplorer){
+            kirby.drawSprite(g2);
+            drawBounds(g);
+        }
+
+        if(!isExplorer){
+            g2.setColor(Color.RED);
+            g2.drawRect((int) (spriteX - halfEWidth), (int) (getHeight() - (spriteY + halfEHeight)),eWidth, eHeight);
+//            g2.fillRect((int) bottomLeftX, (int) (getHeight() - bottomLeftY), 5,5);
+
+        }
     }
 
 

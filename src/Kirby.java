@@ -12,6 +12,9 @@ public class Kirby {
     public static final int DRAW_WIDTH = 128;
     public static final int DRAW_HEIGHT = 128;
 
+    public static final int HALF_WIDTH = DRAW_WIDTH>>1;
+    public static final int HALF_HEIGHT = DRAW_HEIGHT>>1;
+
     public static final int DRAW_X = (GUI.canvasWidth>>1)-(DRAW_WIDTH>>1);
     public static final int DRAW_Y = (GUI.canvasHeight>>1)-(DRAW_HEIGHT>>1);
     public static final int DRAW_END_X = DRAW_X + DRAW_WIDTH;
