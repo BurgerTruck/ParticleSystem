@@ -42,8 +42,8 @@ public class CanvasPanel extends JPanel {
 
     private Graphics2D[] bufferGraphics;
 
-    private double spriteSpeedX = 30;
-    private double spriteSpeedY = 30;
+    private double spriteSpeedX = 100;
+    private double spriteSpeedY = 100;
     private Kirby kirby;
     public CanvasPanel(int width, int height){
         super(true);
@@ -302,14 +302,65 @@ public class CanvasPanel extends JPanel {
     private Point  clicked = null;
 
     private void updateSpritePosition(double elapsed){
-        if(wHeld)spriteY +=spriteSpeedY * elapsed;
-        if(aHeld)spriteX -=spriteSpeedX*elapsed;
-        if(sHeld)spriteY -=spriteSpeedY * elapsed;
-        if(dHeld)spriteX +=spriteSpeedY*elapsed;
+        if(wHeld) {
+            if(spriteY  >= 720)
+                spriteY = 720;
+            else
+                spriteY += spriteSpeedY * elapsed;
+        }
+        if(aHeld) {
+            if(spriteX <= 0)
+                spriteX = 0;
+            else
+                spriteX -= spriteSpeedX * elapsed;
+        }
+        if(sHeld) {
+            if(spriteY <= 0)
+                spriteY = 0;
+            else
+                spriteY -= spriteSpeedY * elapsed;
+        }
+        if(dHeld) {
+            if(spriteX >= 1280)
+                spriteX = 1280;
+            else
+                spriteX += spriteSpeedX * elapsed;
+        }
 
         kirby.updateDirectionsHeld(wHeld, aHeld, sHeld, dHeld);
         bottomLeftX = spriteX - halfEWidth;
         bottomLeftY = spriteY - halfEHeight;
+    }
+
+    private void drawBounds(Graphics g){
+        if(isExplorer){
+            if(spriteY < 9)
+            {
+                int height = (int) ((0 - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight));
+                drawRect(g, 0, getHeight() - height, 1280, height);
+            }
+            if(spriteY > 711)
+            {
+                int height = (int) ((720 - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight));
+                drawRect(g, 0, 0, 1280, getHeight() - height);
+            }
+            if(spriteX < 16)
+            {
+                int width = (int) ((0 - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth));
+                drawRect(g, 0, 0, width, 720);
+            }
+            if(spriteX > 1264)
+            {
+                int width = (int) ((1280 - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth));
+                drawRect(g, width, 0, getWidth() - width, 720);
+            }
+        }
+    }
+
+    private void drawRect(Graphics g, int startX, int startY, int width, int height) {
+
+        g.setColor(Color.BLACK);
+        g.fillRect(startX, startY   , width, height);
     }
     private void initializeListeners(){
         addKeyListener(new KeyListener() {
