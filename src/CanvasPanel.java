@@ -84,6 +84,8 @@ public class CanvasPanel extends JPanel {
                     kirby.updateAnimation(elapsed);
                     updateSpritePosition(elapsed);
 
+
+
                     updateParticlesAndDrawToBuffer(elapsed);
                     joinThreads();
 
@@ -119,8 +121,6 @@ public class CanvasPanel extends JPanel {
 
         if((eParticleWidth&1)==0) eParticleWidth++;
         if((eParticleHeight&1)==0) eParticleHeight++;
-
-
 
     }
 
@@ -185,6 +185,26 @@ public class CanvasPanel extends JPanel {
     private void fillRect(int x, int y, int width, int height, Graphics2D g){
 
         g.fillRect(x, y, width, height);
+    }
+
+    private void drawKirby(Graphics2D g){
+        if(kirby==null) return;
+        int x = (int) spriteX;
+        int y = (int) spriteY;
+        int halfWidth;
+        int halfHeight;
+        if(isExplorer){
+            halfWidth = Kirby.HALF_E_WIDTH;
+            halfHeight = Kirby.HALF_E_HEIGHT;
+            x = (int) ((spriteX - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth-1));
+            y = (int) ((spriteY - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight-1));
+
+        }else{
+            halfWidth = Kirby.HALF_WIDTH;
+            halfHeight = Kirby.HALF_HEIGHT;
+        }
+        y = getHeight() - y ;
+        kirby.drawSprite(g, x - halfWidth, x + halfWidth,y - halfHeight, y + halfHeight );
     }
     private boolean drawPixel(Position p, Graphics2D g){
 
@@ -293,17 +313,12 @@ public class CanvasPanel extends JPanel {
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
+        drawKirby(g2);
         if(isExplorer){
-            kirby.drawSprite(g2);
+
             drawBounds(g);
         }
 
-        if(!isExplorer){
-            g2.setColor(Color.RED);
-            g2.drawRect((int) (spriteX - halfEWidth), (int) (getHeight() - (spriteY + halfEHeight)),eWidth, eHeight);
-//            g2.fillRect((int) bottomLeftX, (int) (getHeight() - bottomLeftY), 5,5);
-
-        }
     }
 
 
@@ -313,30 +328,19 @@ public class CanvasPanel extends JPanel {
 
     private void updateSpritePosition(double elapsed){
         if(wHeld) {
-            if(spriteY  >= 720)
-                spriteY = 720;
-            else
-                spriteY += spriteSpeedY * elapsed;
+            spriteY += spriteSpeedY * elapsed;
         }
         if(aHeld) {
-            if(spriteX <= 0)
-                spriteX = 0;
-            else
-                spriteX -= spriteSpeedX * elapsed;
+            spriteX -= spriteSpeedX * elapsed;
         }
         if(sHeld) {
-            if(spriteY <= 0)
-                spriteY = 0;
-            else
-                spriteY -= spriteSpeedY * elapsed;
+            spriteY -= spriteSpeedY * elapsed;
         }
         if(dHeld) {
-            if(spriteX >= 1280)
-                spriteX = 1280;
-            else
-                spriteX += spriteSpeedX * elapsed;
+            spriteX += spriteSpeedX * elapsed;
         }
-
+        spriteX = Math.max(Kirby.HALF_WIDTH, Math.min(spriteX, GUI.canvasWidth - Kirby.HALF_WIDTH));
+        spriteY = Math.max(Kirby.HALF_HEIGHT, Math.min(spriteY, GUI.canvasHeight - Kirby.HALF_HEIGHT));
         kirby.updateDirectionsHeld(wHeld, aHeld, sHeld, dHeld);
         bottomLeftX = spriteX - halfEWidth;
         bottomLeftY = spriteY - halfEHeight;
@@ -346,22 +350,22 @@ public class CanvasPanel extends JPanel {
         if(isExplorer){
             if(spriteY < 9)
             {
-                int height = (int) ((0 - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight));
+                int height = (int) ((0 - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight-1));
                 drawRect(g, 0, getHeight() - height, 1280, height);
             }
-            if(spriteY > 711)
+            else if(spriteY > 711)
             {
-                int height = (int) ((720 - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight));
+                int height = (int) ((720 - bottomLeftY)/ (eHeight-1) * (GUI.canvasHeight-1));
                 drawRect(g, 0, 0, 1280, getHeight() - height);
             }
             if(spriteX < 16)
             {
-                int width = (int) ((0 - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth));
+                int width = (int) ((0 - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth-1));
                 drawRect(g, 0, 0, width, 720);
             }
-            if(spriteX > 1264)
+            else if(spriteX > 1264)
             {
-                int width = (int) ((1280 - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth));
+                int width = (int) ((1280 - bottomLeftX) / (eWidth-1)  *  (GUI.canvasWidth-1));
                 drawRect(g, width, 0, getWidth() - width, 720);
             }
         }
@@ -380,20 +384,20 @@ public class CanvasPanel extends JPanel {
             }
             @Override
             public void keyPressed(KeyEvent e) {
-                if(!isExplorer) return;
-                if(e.getKeyCode()==KeyEvent.VK_W) wHeld = true;
-                if(e.getKeyCode() == KeyEvent.VK_A) aHeld = true;
-                if(e.getKeyCode() == KeyEvent.VK_D) dHeld = true;
-                if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = true;
+//                if(!isExplorer) return;
+                if(e.getKeyCode()==KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_KP_UP)  wHeld = true;
+                if(e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) aHeld = true;
+                if(e.getKeyCode() == KeyEvent.VK_D|| e.getKeyCode() == KeyEvent.VK_RIGHT) dHeld = true;
+                if(e.getKeyCode() ==KeyEvent.VK_S|| e.getKeyCode() == KeyEvent.VK_DOWN)   sHeld = true;
             }
 
             @Override
             public void keyReleased(KeyEvent e) {
-                if(!isExplorer) return;
-                if(e.getKeyCode()==KeyEvent.VK_W) wHeld = false;
-                if(e.getKeyCode() == KeyEvent.VK_A) aHeld = false;
-                if(e.getKeyCode() == KeyEvent.VK_D) dHeld = false;
-                if(e.getKeyCode() ==KeyEvent.VK_S) sHeld = false;
+//                if(!isExplorer) return;
+                if(e.getKeyCode()==KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_KP_UP)wHeld = false;
+                if(e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT)aHeld = false;
+                if(e.getKeyCode() == KeyEvent.VK_D|| e.getKeyCode() == KeyEvent.VK_RIGHT)dHeld = false;
+                if(e.getKeyCode() ==KeyEvent.VK_S|| e.getKeyCode() == KeyEvent.VK_DOWN) sHeld = false;
             }
         });
 
@@ -402,11 +406,12 @@ public class CanvasPanel extends JPanel {
             public void mouseClicked(MouseEvent e) {}
             @Override
             public void mousePressed(MouseEvent e) {
+                requestFocus();
                 if(isExplorer) return;
 
                 if(SwingUtilities.isLeftMouseButton(e)){
                     leftClicked = true;
-                    requestFocus();
+
                     Point mouse = e.getLocationOnScreen();
                     SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
                     clicked = new Point(mouse.getLocation().x,  mouse.getLocation().y);

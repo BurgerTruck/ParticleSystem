@@ -9,16 +9,22 @@ public class Kirby {
     public static final int NUM_FRAMES_IDLE = 4;
     public static final int NUM_FRAMES_WALKING = 10;
 
-    public static final int DRAW_WIDTH = 128;
-    public static final int DRAW_HEIGHT = 128;
+    public static final int WIDTH = 3;
+    public static final int HEIGHT = 3;
 
-    public static final int HALF_WIDTH = DRAW_WIDTH>>1;
-    public static final int HALF_HEIGHT = DRAW_HEIGHT>>1;
+    public static final int E_WIDTH = GUI.canvasWidth / CanvasPanel.eWidth * WIDTH;
+    public static final int E_HEIGHT = E_WIDTH;
 
-    public static final int DRAW_X = (GUI.canvasWidth>>1)-(DRAW_WIDTH>>1);
-    public static final int DRAW_Y = (GUI.canvasHeight>>1)-(DRAW_HEIGHT>>1);
-    public static final int DRAW_END_X = DRAW_X + DRAW_WIDTH;
-    public static final int DRAW_END_Y = DRAW_Y + DRAW_HEIGHT;
+    public static final int HALF_WIDTH = WIDTH>>1;
+    public static final int HALF_HEIGHT = HEIGHT>>1;
+
+    public static final int HALF_E_WIDTH = E_WIDTH >>1;
+    public static final int HALF_E_HEIGHT = E_HEIGHT >>1;
+
+    public static final int DRAW_X = (GUI.canvasWidth>>1)-(E_WIDTH >>1);
+    public static final int DRAW_Y = (GUI.canvasHeight>>1)-(E_HEIGHT >>1);
+    public static final int DRAW_END_X = DRAW_X + E_WIDTH;
+    public static final int DRAW_END_Y = DRAW_Y + E_HEIGHT;
 
     private boolean isWalking = false;
 
@@ -76,8 +82,7 @@ public class Kirby {
 
 
     }
-
-    public void drawSprite(Graphics2D g){
+    public void drawSprite(Graphics2D g, int DRAW_X, int DRAW_END_X, int DRAW_Y, int DRAW_END_Y){
         int sx = frameCol * FRAME_WIDTH;
         int sy = frameRow * FRAME_WIDTH;
         int startX = DRAW_X, endX = DRAW_END_X;
@@ -88,4 +93,5 @@ public class Kirby {
         g.drawImage(SPRITE_SHEET, startX, DRAW_Y, endX, DRAW_END_Y,
                 sx, sy, sx + FRAME_WIDTH, sy + FRAME_HEIGHT, null   );
     }
+
 }

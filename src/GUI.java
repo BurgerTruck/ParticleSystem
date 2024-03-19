@@ -14,6 +14,9 @@ public class GUI extends JFrame {
     private JPanel addWallPanel;
     private JPanel addBatchPanel;
     private CanvasPanel canvas;
+    private JButton batchConfirm;
+    private JButton addConfirm;
+    JPanel sidePanel;
     private JToggleButton explorerModeButton;
     public GUI() throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
@@ -28,7 +31,7 @@ public class GUI extends JFrame {
         initBatchPanel();
         initExplorerButton();
 
-        JPanel sidePanel = new JPanel();
+        sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         addPointPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 //        addWallPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -48,6 +51,7 @@ public class GUI extends JFrame {
         mainPanel.add(sidePanel   );
         add(mainPanel);
 
+        canvas.requestFocus();
         this.repaint();
         this.revalidate();
     }
@@ -68,14 +72,14 @@ public class GUI extends JFrame {
         InputField speedField = velocityPanel.addInput(new InputField("v")) ;
         InputField angleField = velocityPanel.addInput(new InputField("θ")) ;
 
-        JButton confirmButton = new JButton("Confirm");
+        addConfirm = new JButton("Confirm");
 
         addPointPanel.add(coordinatesPanel);
         addPointPanel.add(velocityPanel);
-        addPointPanel.add(confirmButton);
-        confirmButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        addPointPanel.add(addConfirm);
+        addConfirm.setAlignmentX(Component.CENTER_ALIGNMENT);
         addPointPanel.add(Box.createVerticalStrut(5));
-        confirmButton.addActionListener(e -> {
+        addConfirm.addActionListener(e -> {
             double  x = Double.parseDouble(xField.getInput());
             double y = Double.parseDouble(yField.getInput());
             double speed = Double.parseDouble(speedField.getInput());
@@ -145,7 +149,7 @@ public class GUI extends JFrame {
 
         InputField numPoints = new InputField("N");
 
-        JButton confirm = new JButton("Confirm");
+        batchConfirm = new JButton("Confirm");
 
         addBatchPanel.add(coordinatesPanel1);
         addBatchPanel.add(coordinatesPanel2);
@@ -153,12 +157,12 @@ public class GUI extends JFrame {
         addBatchPanel.add(anglePanel);
         addBatchPanel.add(numPoints);
         addBatchPanel.add(Box.createVerticalStrut(5));
-        addBatchPanel.add(confirm);
+        addBatchPanel.add(batchConfirm);
         addBatchPanel.add(Box.createVerticalStrut(5));
         numPoints.setAlignmentX(Component.CENTER_ALIGNMENT);
-        confirm.setAlignmentX(Component.CENTER_ALIGNMENT);
+        batchConfirm.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        confirm.addActionListener(e -> {
+        batchConfirm.addActionListener(e -> {
             double  x1 = Double.parseDouble(x1Field.getInput());
             double y1 = Double.parseDouble(y1Field.getInput());
 
@@ -192,14 +196,23 @@ public class GUI extends JFrame {
     private void initExplorerButton(){
          explorerModeButton = new JToggleButton("Explorer Mode", false);
          explorerModeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        explorerModeButton.setFocusable(false);
          explorerModeButton.addChangeListener(new ChangeListener() {
              @Override
              public void stateChanged(ChangeEvent e) {
                  canvas.setExplorer(explorerModeButton.isSelected());
-                 canvas.requestFocus();
+                 if(explorerModeButton.isSelected()){
+                     addConfirm.setEnabled(false);
+                     batchConfirm.setEnabled(false);
+                 }else{
+                     addConfirm.setEnabled(true);
+                     batchConfirm.setEnabled(true);
+                 }
+//                 canvas.requestFocus();
 //                 canvas.resetHeldKeys();
              }
          });
+
     }
 
 }
