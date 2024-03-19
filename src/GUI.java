@@ -24,17 +24,18 @@ public class GUI extends JFrame {
 
         canvas = new CanvasPanel(canvasWidth, canvasHeight);
         initPointPanel();
-        initWallPanel();
+//        initWallPanel();
         initBatchPanel();
         initExplorerButton();
 
         JPanel sidePanel = new JPanel();
         sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         addPointPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        addWallPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+//        addWallPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+//        sidePanel.add(addWallPanel);
         sidePanel.add(addPointPanel);
         sidePanel.add(Box.createVerticalStrut(20));
-        sidePanel.add(addWallPanel);
+
         sidePanel.add(Box.createVerticalStrut(20));
         sidePanel.add(addBatchPanel);
         sidePanel.add(Box.createVerticalStrut(20));
@@ -87,39 +88,39 @@ public class GUI extends JFrame {
 
     }
 
-    private void initWallPanel(){
-        addWallPanel = new JPanel();
-        addWallPanel.setLayout(new BoxLayout(addWallPanel, BoxLayout.Y_AXIS));
-
-        InputPanel coordinatesPanel1 = new InputPanel();
-        InputPanel coordinatesPanel2 = new InputPanel();
-
-        InputField x1Field = coordinatesPanel1.addInput(new InputField("X₁"));
-        InputField y1Field = coordinatesPanel1.addInput(new InputField("Y₁"));
-
-        InputField x2Field = coordinatesPanel2.addInput(new InputField("X₂"));
-        InputField y2Field = coordinatesPanel2.addInput(new InputField("Y₂"));
-
-        JButton confirm = new JButton("Confirm");
-
-        addWallPanel.add(coordinatesPanel1);
-        addWallPanel.add(coordinatesPanel2);
-        addWallPanel.add(confirm);
-        addWallPanel.add(Box.createVerticalStrut(5));
-        confirm.setAlignmentX(Component.CENTER_ALIGNMENT);
-
-        confirm.addActionListener(e -> {
-            double  x1 = Double.parseDouble(x1Field.getInput());
-            double y1 = Double.parseDouble(y1Field.getInput());
-
-            double  x2 = Double.parseDouble(x2Field.getInput());
-            double y2 = Double.parseDouble(y2Field.getInput());
-
-            canvas.addWall(new Wall(new Position(x1,y1), new Position(x2,y2)));
-        });
-        addWallPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Wall"));
-
-    }
+//    private void initWallPanel(){
+//        addWallPanel = new JPanel();
+//        addWallPanel.setLayout(new BoxLayout(addWallPanel, BoxLayout.Y_AXIS));
+//
+//        InputPanel coordinatesPanel1 = new InputPanel();
+//        InputPanel coordinatesPanel2 = new InputPanel();
+//
+//        InputField x1Field = coordinatesPanel1.addInput(new InputField("X₁"));
+//        InputField y1Field = coordinatesPanel1.addInput(new InputField("Y₁"));
+//
+//        InputField x2Field = coordinatesPanel2.addInput(new InputField("X₂"));
+//        InputField y2Field = coordinatesPanel2.addInput(new InputField("Y₂"));
+//
+//        JButton confirm = new JButton("Confirm");
+//
+//        addWallPanel.add(coordinatesPanel1);
+//        addWallPanel.add(coordinatesPanel2);
+//        addWallPanel.add(confirm);
+//        addWallPanel.add(Box.createVerticalStrut(5));
+//        confirm.setAlignmentX(Component.CENTER_ALIGNMENT);
+//
+//        confirm.addActionListener(e -> {
+//            double  x1 = Double.parseDouble(x1Field.getInput());
+//            double y1 = Double.parseDouble(y1Field.getInput());
+//
+//            double  x2 = Double.parseDouble(x2Field.getInput());
+//            double y2 = Double.parseDouble(y2Field.getInput());
+//
+//            canvas.addWall(new Wall(new Position(x1,y1), new Position(x2,y2)));
+//        });
+//        addWallPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Wall"));
+//
+//    }
 
     private void initBatchPanel(){
         addBatchPanel = new JPanel();

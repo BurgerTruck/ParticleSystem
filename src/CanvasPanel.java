@@ -81,11 +81,12 @@ public class CanvasPanel extends JPanel {
                 while(true){
                     bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
                     double elapsed = getElapsed();
-
                     updateParticlesAndDrawToBuffer(elapsed);
                     joinThreads();
                     kirby.updateAnimation(elapsed);
                     updateSpritePosition(elapsed);
+
+
                     frontBuffer.getGraphics().drawImage(buffer, 0,0, null);
 
                     try {
@@ -288,25 +289,19 @@ public class CanvasPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g;
         g2.drawImage(frontBuffer, null, 0,0);
         g2.setStroke(stroke);
-        if(clicked!=null){
+
+        if(clicked!=null && !isExplorer){
             Point mouse = MouseInfo.getPointerInfo().getLocation();
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
-        if(!isExplorer){
-            g2.setColor(Color.RED);
-            g2.drawRect((int) (spriteX - halfEWidth), (int) (getHeight() - (spriteY + halfEHeight)),eWidth, eHeight);
-//            g2.fillRect((int) bottomLeftX, (int) (getHeight() - bottomLeftY), 5,5);
-        }
         if(isExplorer)kirby.drawSprite(g2);
-
     }
 
 
     private boolean leftClicked = false;
     private boolean rightClicked = true;
     private Point  clicked = null;
-
 
     private void updateSpritePosition(double elapsed){
         if(wHeld)spriteY +=spriteSpeedY * elapsed;
@@ -327,6 +322,7 @@ public class CanvasPanel extends JPanel {
 
             @Override
             public void keyPressed(KeyEvent e) {
+                if(!isExplorer) return;
                 if(e.getKeyCode()==KeyEvent.VK_W) wHeld = true;
                 if(e.getKeyCode() == KeyEvent.VK_A) aHeld = true;
                 if(e.getKeyCode() == KeyEvent.VK_D) dHeld = true;
@@ -335,6 +331,7 @@ public class CanvasPanel extends JPanel {
 
             @Override
             public void keyReleased(KeyEvent e) {
+                if(!isExplorer) return;
                 if(e.getKeyCode()==KeyEvent.VK_W) wHeld = false;
                 if(e.getKeyCode() == KeyEvent.VK_A) aHeld = false;
                 if(e.getKeyCode() == KeyEvent.VK_D) dHeld = false;
@@ -347,24 +344,25 @@ public class CanvasPanel extends JPanel {
             public void mouseClicked(MouseEvent e) {}
             @Override
             public void mousePressed(MouseEvent e) {
-                requestFocus();
-                Point mouse = e.getLocationOnScreen();
-                SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
-                clicked = new Point(mouse.getLocation().x,  mouse.getLocation().y);
-                if(SwingUtilities.isLeftMouseButton(e))leftClicked = true;
-                else if(SwingUtilities.isRightMouseButton(e))rightClicked = true;
+                if(isExplorer) return;
+
+                if(SwingUtilities.isLeftMouseButton(e)){
+                    leftClicked = true;
+                    requestFocus();
+                    Point mouse = e.getLocationOnScreen();
+                    SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
+                    clicked = new Point(mouse.getLocation().x,  mouse.getLocation().y);
+                }
             }
             @Override
             public void mouseReleased(MouseEvent e) {
+                if(isExplorer)return;
                 Point mouse = e.getLocationOnScreen();
                 SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
 
                 if(leftClicked){
                     leftClicked = false;
                     addParticle(new Particle(new Position(clicked.x, getHeight()-clicked.y), clicked.distance(mouse ), Math.toDegrees(Math.atan2((getHeight()-mouse.y)-(getHeight()-clicked.y),mouse.x-clicked.x))));
-                }else if(rightClicked){
-                    rightClicked = false;
-                    addWall(new Wall(new Position(clicked.x, getHeight()-clicked.y), new Position(mouse.x, getHeight()-mouse.y)));
                 }
                 clicked = null;
             }
