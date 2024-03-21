@@ -203,10 +203,16 @@ public class GUI extends JFrame {
                  canvas.setExplorer(explorerModeButton.isSelected());
                  if(explorerModeButton.isSelected()){
                      addConfirm.setEnabled(false);
+                     addPointPanel.setVisible(false);
+                     addBatchPanel.setVisible(false);
                      batchConfirm.setEnabled(false);
+//                     pack();
                  }else{
                      addConfirm.setEnabled(true);
+                     addPointPanel.setVisible(true);
+                     addBatchPanel.setVisible(true);
                      batchConfirm.setEnabled(true);
+//                     pack();
                  }
 //                 canvas.requestFocus();
 //                 canvas.resetHeldKeys();
