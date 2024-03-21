@@ -206,7 +206,7 @@ public class CanvasPanel extends JPanel {
         y = getHeight() - y ;
         if(isExplorer)kirby.drawSprite(g, x - halfWidth, x + halfWidth,y - halfHeight, y + halfHeight );
         else{
-            g.setColor(Color.PINK);
+            g.setColor(Color.decode("#eb81a6"));
             fillRect(x - halfWidth, y - halfHeight, Kirby.WIDTH, Kirby.HEIGHT, g);
 
         }
