@@ -390,7 +390,7 @@ public class CanvasPanel extends JPanel {
             @Override
             public void keyPressed(KeyEvent e) {
 //                if(!isExplorer) return;
-                if(e.getKeyCode()==KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_KP_UP)  wHeld = true;
+                if(e.getKeyCode()==KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP)  wHeld = true;
                 if(e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT) aHeld = true;
                 if(e.getKeyCode() == KeyEvent.VK_D|| e.getKeyCode() == KeyEvent.VK_RIGHT) dHeld = true;
                 if(e.getKeyCode() ==KeyEvent.VK_S|| e.getKeyCode() == KeyEvent.VK_DOWN)   sHeld = true;
@@ -399,7 +399,7 @@ public class CanvasPanel extends JPanel {
             @Override
             public void keyReleased(KeyEvent e) {
 //                if(!isExplorer) return;
-                if(e.getKeyCode()==KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_KP_UP)wHeld = false;
+                if(e.getKeyCode()==KeyEvent.VK_W || e.getKeyCode() == KeyEvent.VK_UP)wHeld = false;
                 if(e.getKeyCode() == KeyEvent.VK_A || e.getKeyCode() == KeyEvent.VK_LEFT)aHeld = false;
                 if(e.getKeyCode() == KeyEvent.VK_D|| e.getKeyCode() == KeyEvent.VK_RIGHT)dHeld = false;
                 if(e.getKeyCode() ==KeyEvent.VK_S|| e.getKeyCode() == KeyEvent.VK_DOWN) sHeld = false;

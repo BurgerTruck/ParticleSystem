@@ -2,7 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class Kirby {
-    public static final Image SPRITE_SHEET = new ImageIcon("kirby_what.png").getImage();
+    public static final Image SPRITE_SHEET = new ImageIcon(Kirby.class.getResource("kirby_what.png")).getImage();
     public static final int FRAME_WIDTH = 30;
     public static final int FRAME_HEIGHT = 30;
 
