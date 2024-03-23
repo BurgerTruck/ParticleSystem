@@ -35,6 +35,7 @@ public class World implements Serializable {
         joinThreads();
         for(Kirby kirby: getKirbies()){
             kirby.updateSpritePosition(elapsed);
+
             kirby.updateAnimation(elapsed);
         }
     }

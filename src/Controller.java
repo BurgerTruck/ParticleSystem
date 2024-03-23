@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -39,11 +40,6 @@ public class Controller implements Runnable{
     public void addParticles(java.util.List<Particle> particleList){
         world.getParticles().addAll(particleList);
     }
-    public void addWall(Wall wall){
-        world.getWalls().add(wall);
-        canvas.drawWall( wall);
-    }
-
     public void setExplorer(boolean isExplorer){
         this.isExplorer = isExplorer;
         updateViewBox();
@@ -110,7 +106,7 @@ public class Controller implements Runnable{
         return frames;
     }
 
-    public int[] translatePositionToLocal(double x, double y){
+    public int[] transformLocalPosition(double x, double y){
         int width;
         int height;
         if(isExplorer()){
@@ -120,10 +116,10 @@ public class Controller implements Runnable{
             width = GUI.canvasWidth;
             height = GUI.canvasHeight;
         }
-        int localX = (int) ((x - bottomLeftX) / (width-1)  *  (GUI.canvasWidth-1));
-        int localY= (int) ((y - bottomLeftY)/ (height-1) * (GUI.canvasHeight-1));
+        int newX = (int) ((x - bottomLeftX) / (width-1)  *  (GUI.canvasWidth-1));
+        int newY= (int) ((y - bottomLeftY)/ (height-1) * (GUI.canvasHeight-1));
 
-        return new int[]{localX, localY};
+        return new int[]{newX,  newY    };
     }
 
     public Kirby getPlayerKirby() {
@@ -143,9 +139,11 @@ public class Controller implements Runnable{
     public void update(){
         canvas.clearBackBuffer();
         if(playerKirby!=null) playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
+
         world.update(getElapsed());
         updateViewBox();
         canvas.drawFrontBuffer();
+
         try {
             SwingUtilities.invokeAndWait(new Runnable() {
                 @Override
@@ -202,6 +200,5 @@ public class Controller implements Runnable{
         if(kirby == null)return;
         kirby.updateDirectionsHeld(input.w, input.a, input.s, input.d);
     }
-
 
 }

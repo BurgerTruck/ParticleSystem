@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class Kirby implements Serializable {
-    public static final Image SPRITE_SHEET = new ImageIcon("kirby_what.png").getImage();
+    public static final Image SPRITE_SHEET = new ImageIcon(Kirby.class.getResource("kirby_what.png")).getImage();
     public static final int FRAME_WIDTH = 30;
     public static final int FRAME_HEIGHT = 30;
 
@@ -12,8 +12,8 @@ public class Kirby implements Serializable {
     public static final int NUM_FRAMES_WALKING = 10;
 
 
-    private double spriteSpeedX = 30;
-    private double spriteSpeedY = 30;
+    private double spriteSpeedX = 100;
+    private double spriteSpeedY = 100;
     private boolean isWalking = false;
 
     private int frameCol = 0;
@@ -84,13 +84,18 @@ public class Kirby implements Serializable {
     public void drawSprite(Graphics2D g, int DRAW_X, int DRAW_END_X, int DRAW_Y, int DRAW_END_Y){
         int sx = frameCol * FRAME_WIDTH;
         int sy = frameRow * FRAME_WIDTH;
-        int startX = DRAW_X, endX = DRAW_END_X;
+        int padding = 0;
+        double ratio = ((double)padding/FRAME_WIDTH);
+        int size = DRAW_END_Y - DRAW_Y+1;
+        padding = (int) Math.ceil(ratio*size);
+        int startX = DRAW_X-padding, endX = DRAW_END_X+padding;
         if(horizontalFlipped){
-            startX = DRAW_END_X;
-            endX = DRAW_X;
+            startX = DRAW_END_X+padding;
+            endX = DRAW_X-padding;
         }
-        g.drawImage(SPRITE_SHEET, startX, DRAW_Y, endX, DRAW_END_Y,
+        g.drawImage(SPRITE_SHEET, startX, DRAW_Y-padding, endX, DRAW_END_Y + padding,
                 sx, sy, sx + FRAME_WIDTH, sy + FRAME_HEIGHT, null   );
+
     }
 
     public void updateSpritePosition(double elapsed){
@@ -99,7 +104,8 @@ public class Kirby implements Serializable {
         if(sHeld)p.y -=spriteSpeedY * elapsed;
         if(dHeld)p.x +=spriteSpeedY*elapsed;
 
-
+        p.x = Math.max(Config.halfKirbyWidth, Math.min(p.x, GUI.canvasWidth - Config.halfKirbyWidth-1));
+        p.y = Math.max(Config.halfKirbyHeight, Math.min(p.y, GUI.canvasHeight - Config.halfKirbyHeight-1));
     }
     public double getX() {
         return p.x;

@@ -1,3 +1,5 @@
+import com.sun.corba.se.impl.orbutil.graph.Graph;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.Point;
@@ -32,8 +34,8 @@ public class CanvasPanel extends JPanel {
         add(fpsPanel);
 
 
-        buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
-        frontBuffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_BYTE_GRAY);
+        buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
+        frontBuffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
 
         bufferGraphics = new Graphics2D[Config.NUM_THREADS];
         for(int i = 0; i < Config.NUM_THREADS; i++){
@@ -52,116 +54,119 @@ public class CanvasPanel extends JPanel {
         }).start();
 
         initializeListeners();
-        setBorder(BorderFactory.createLineBorder(Color.BLACK,1));
-
+//        setBorder(BorderFactory.createLineBorder(Color.BLACK,1));
         pixelSize = (int) ((double)GUI.canvasWidth/Config.eWidth);
         if((pixelSize&1)==0)pixelSize++;
 
-
     }
-
-
-
-
-    public void drawWall(Wall wall){
-//        g.drawLine((int) wall.p1.x, (int) (getHeight()- wall.p1.y), (int) wall.p2.x, (int) (getHeight()-wall.p2.y));
-        int x2 = (int) wall.p2.x, x1 = (int) wall.p1.x;
-        int y2 = getHeight() - (int)  wall.p2.y,  y1 =  getHeight() - (int) wall.p1.y;
-        int dx = Math.abs(x2 - x1);
-        int dy = Math.abs(y2 - y1);
-        int sx = x1 < x2 ? 1 : -1;
-        int sy = y1 < y2 ? 1 : -1;
-        int err = dx - dy;
-        int e2;
-
-        while (x1 != x2 || y1 != y2) {
-            for (int i = -Config.halfParticleHeight; i <= Config.halfParticleHeight; i++) {
-                for (int j = -Config.halfParticleWidth; j <= Config.halfParticleWidth; j++) {
-                    int newX = x1 + j;
-                    int newY = y1 + i;
-                    if (newX >= 0 && newX < GUI.canvasWidth && newY >= 0 && newY < GUI.canvasHeight) {
-//                        backPixels[newY * GUI.canvasWidth + newX] = 1 ;
-                    }else break;
-                }
-            }
-            e2 = 2 * err;
-            if (e2 > -dy) {
-                err -= dy;
-                x1 += sx;
-            }
-            if (e2 < dx) {
-                err += dx;
-                y1 += sy;
-            }
-        }
-
-    }
-
-
 
     public void drawParticle(Particle p, int bufferGraphicsIndex){
-        drawPixel(p.p, bufferGraphics[bufferGraphicsIndex]);
+        int halfWidth  = Config.halfParticleWidth;
+        int halfHeight = Config.halfParticleHeight;
+        if(controller.isExplorer()){
+            halfWidth = Config.halfEParticleWidth;
+            halfHeight = Config.halfEParticleHeight;
+        }
+        drawRectangle(p.p, bufferGraphics[bufferGraphicsIndex], halfWidth, halfHeight );
     }
     private void fillRect(int x, int y, int width, int height, Graphics2D g){
 
         g.fillRect(x, y, width, height);
     }
     public void drawFrontBuffer(){
-
-        Graphics2D g = (Graphics2D) frontBuffer.getGraphics();
-        if(!controller.isExplorer()){
-           g.drawImage(buffer, 0,0, null);
-        }else{
-            synchronized (frontBuffer){
-                g.setBackground(Color.WHITE);
-                g.clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
-                int row = 0;
-                int col = 0;
-                for(int y = controller.getBottomLeftY(); y<=controller.getTopRightY(); y++, row+=pixelSize){
-                    for(int x = controller.getBottomLeftX(); x<=controller.getTopRightX(); x++, col+=pixelSize){
-                        if(x < 0 || y < 0 || x>=GUI.canvasWidth || y>=GUI.canvasHeight){
-                            g.setColor(Color.BLACK);
-                            g.fillRect(col, getHeight()- row - pixelSize, pixelSize, pixelSize);
-                            continue;
-                        }
-                        if(buffer.getRGB(x, getHeight()- y-1)!=-1){
-                            g.setColor(Color.BLACK);
-                            g.fillRect(col, getHeight()- row-pixelSize, pixelSize, pixelSize);
-                        }
-                    }
-                    col = 0;
-                }
-            }
-
-        }
+        frontBuffer.getGraphics().drawImage(buffer, 0,0, null);
     }
-    private boolean drawPixel(Position p, Graphics2D g){
-        int x = (int)(p.x);
-        int y = (int)(p.y);
+    private boolean drawRectangle(Position p, Graphics2D g, int halfWidth, int halfHeight){
+        int x;
+        int y;
+        int[] translatedPosition = controller.transformLocalPosition(p.x, p.y);
+        x = translatedPosition[0];
+        y = translatedPosition[1];
 
+        y = getHeight() - y-1;
+        int endX = x+halfWidth;
+        int endY = y+halfHeight;
+        x = x-halfWidth;
+        y = y - halfHeight;
 
-        int halfHeight = Config.halfParticleHeight;
-        int halfWidth = Config.halfParticleWidth;
-        if(!controller.inViewBox(x, y, halfWidth, halfHeight)) return false;
-        y = getHeight() - y;
+        if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0)
+            return false;
 
-        int endX = Math.min(x + halfWidth, GUI.canvasWidth-1);
-        int endY = Math.min(y + halfHeight, GUI.canvasHeight-1);
-        x = Math.max(0, Math.min(x - halfWidth, GUI.canvasWidth - 1));
-        y = Math.max(0, Math.min(y - halfHeight, GUI.canvasHeight - 1));
-        endY = Math.max(0, endY);
-        endX = Math.max(0, endX);
+        endX = clamp(endX, 0, GUI.canvasWidth-1);
+        endY = clamp(endY, 0, GUI.canvasHeight-1);
+        x = clamp(x, 0, GUI.canvasWidth-1);
+        y = clamp(y, 0, GUI.canvasHeight-1);
+
         int width = endX - x+1;
         int height = endY - y+1;
-        if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0) return false;
+
         int midX = endX + x >>1;
         int midY = endY + y >>1;
-        if(buffer.getRGB(midX, midY )!=-1)return false;
+
+        if(!controller.isExplorer()){
+            if(   buffer.getRGB(midX, midY )!=-1)return false;
+        }else{
+            int countFilled = 0;
+            int[] yValues = new int[]{y, midY, endY};
+            int[] xValues = new int[]{x, midX, endX};
+            for(int i=  0; i < 3; i++){
+                for(int j = 0; j <3; j++){
+                    if(buffer.getRGB(xValues[j], yValues[i])!=-1)countFilled++;
+                }
+            }
+            if(countFilled == 9 )return false   ;
+        }
+
         fillRect(x, y, width, height, g);
+
         return true;
     }
+    private int clamp(int val, int min, int max){
+        return Math.min(max, Math.max(val, min));
+    }
+    private void drawRectangle(Position[] positions, Graphics2D g2){
+        Position topLeft = positions[0];
+        Position bottomRight = positions[1];
+        int[] topLeftTransformed = controller.transformLocalPosition(topLeft.x, topLeft.y   );
+        int[] bottomRightTransformed = controller.transformLocalPosition(bottomRight.x, bottomRight.y);
+
+        int startX = topLeftTransformed[0];
+        int startY = topLeftTransformed[1];
+
+        int endX = bottomRightTransformed[0];
+        int endY = bottomRightTransformed[1];
+
+        System.out.println(startY);
+        System.out.println(endY );
+        System.out.println(startX);
+        System.out.println(endX);
+        System.out.println();
+        if(startX >=GUI.canvasWidth || endX < 0 || startY <0 || endY >=GUI.canvasHeight)
+            return ;
+//        System.out.println(width);
+//        System.out.println(height);
 
 
+        endX = clamp(endX, 0, GUI.canvasWidth-1);
+        endY = clamp(endY, 0, GUI.canvasHeight-1);
+        startX = clamp(startX, 0, GUI.canvasWidth-1);
+        startY = clamp(startY, 0, GUI.canvasHeight-1);
+
+        int width = Math.abs(endX - startX+1);
+        int height = Math.abs(endY - startY+1);
+
+//        System.out.println(topLeft.y);
+//        System.out.println(startX);
+//        System.out.println(startY);
+//        System.out.println(width);
+//        System.out.println(height);
+//        System.out.println();
+
+        startY = getHeight()-startY -1;
+
+
+        fillRect(startX, startY, width, height, g2 );
+    }
 
     private BasicStroke stroke = new BasicStroke(3);
 
@@ -181,45 +186,49 @@ public class CanvasPanel extends JPanel {
             SwingUtilities.convertPointFromScreen(mouse, this);
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
-//        if(!controller.isExplorer()){
-//            g2.setColor(Color.RED);
-//            g2.drawRect((int) (controller.getPlayerKirby().getX()-Config.halfEWidth),
-//                    (int) (getHeight() - (controller.getPlayerKirby().getY()+Config.halfEHeight)),
-//                    Config.eWidth,
-//                    Config.eHeight);
-////            controller.setExplorer(false);
-//        }
 
         for(Kirby kirby: controller.getKirbies()){
             if(kirby==controller.getPlayerKirby())continue;
             drawKirby(g2, kirby);
         }
+
         drawKirby(g2, controller.getPlayerKirby());
+        drawBounds(g2);
     }
     private void drawKirby(Graphics2D g, Kirby kirby){
         if(kirby==null) return;
         double x = kirby.getX();
         double y = kirby.getY();
         if(!controller.inViewBox( x,  y, Config.halfKirbyWidth, Config.halfKirbyHeight)) return;
-        int[] localPosition = controller.translatePositionToLocal(kirby.getX(), kirby.getY());
+        int[] localPosition = controller.transformLocalPosition(x, y);
         int drawX = localPosition[0];
         int drawY = localPosition[1];
 
-        int halfWidth;
-        int halfHeight;
-        if(controller.isExplorer()){
+        int halfWidth = Config.halfKirbyWidth;
+        int halfHeight = Config.halfKirbyHeight;
+        if(controller.isExplorer()) {
             halfWidth = Config.halfEKirbyWidth;
             halfHeight = Config.halfEKirbyHeight;
-        }else{
-            halfWidth = Config.halfKirbyWidth;
-            halfHeight = Config.halfKirbyHeight;
         }
-        drawY = getHeight() - drawY ;
-        kirby.drawSprite(g, drawX - halfWidth, drawX + halfWidth,drawY - halfHeight, drawY + halfHeight );
-    }
+        drawY = getHeight() - drawY -1;
+        if(controller.isExplorer()){
+            kirby.drawSprite(g, drawX - halfWidth, drawX + halfWidth,drawY - halfHeight, drawY + halfHeight );
+        }else{
+            g.setColor(Color.decode("#eb81a6"));
+            fillRect(drawX - halfWidth, drawY - halfHeight, Config.kirbyWidth, Config.kirbyHeight, g);
+        }
 
+    }
+    private void drawBounds(Graphics2D g){
+        if(controller.isExplorer()){
+            drawRectangle(Config.bottomBoundRect, g);
+            drawRectangle(Config.leftBoundRect, g);
+            drawRectangle(Config.rightBoundRect, g);
+            drawRectangle(Config.topBoundRect, g);
+        }
+
+    }
     private boolean leftClicked = false;
-    private boolean rightClicked = true;
     private Point  clicked = null;
 
 
@@ -248,24 +257,25 @@ public class CanvasPanel extends JPanel {
             @Override
             public void mousePressed(MouseEvent e) {
                 requestFocus();
-                Point mouse = e.getLocationOnScreen();
-                SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
-                clicked = new Point(mouse.getLocation().x,  mouse.getLocation().y);
-                if(SwingUtilities.isLeftMouseButton(e))leftClicked = true;
-                else if(SwingUtilities.isRightMouseButton(e))rightClicked = true;
+                if(controller.isExplorer()) return;
+
+                if(SwingUtilities.isLeftMouseButton(e)){
+                    leftClicked = true;
+
+                    Point mouse = e.getLocationOnScreen();
+                    SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
+                    clicked = new Point(mouse.getLocation().x,  mouse.getLocation().y);
+                }
             }
             @Override
             public void mouseReleased(MouseEvent e) {
+                if(controller.isExplorer())return;
                 Point mouse = e.getLocationOnScreen();
                 SwingUtilities.convertPointFromScreen(mouse, CanvasPanel.this);
 
                 if(leftClicked){
                     leftClicked = false;
                     controller.addParticle(new Particle(new Position(clicked.x, getHeight()-clicked.y), clicked.distance(mouse ), Math.toDegrees(Math.atan2((getHeight()-mouse.y)-(getHeight()-clicked.y),mouse.x-clicked.x))));
-
-                }else if(rightClicked){
-                    rightClicked = false;
-                    controller.addWall(new Wall(new Position(clicked.x, getHeight()-clicked.y), new Position(mouse.x, getHeight()-mouse.y)));
                 }
                 clicked = null;
             }
@@ -280,6 +290,7 @@ public class CanvasPanel extends JPanel {
     public void setController(Controller controller) {
         this.controller = controller;
     }
+
 
     public void clearBackBuffer(){
         bufferGraphics[0].clearRect(0,0, GUI.canvasWidth, GUI.canvasHeight);
