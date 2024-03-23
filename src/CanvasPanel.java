@@ -136,17 +136,9 @@ public class CanvasPanel extends JPanel {
         int endX = bottomRightTransformed[0];
         int endY = bottomRightTransformed[1];
 
-        System.out.println(startY);
-        System.out.println(endY );
-        System.out.println(startX);
-        System.out.println(endX);
-        System.out.println();
         if(startX >=GUI.canvasWidth || endX < 0 || startY <0 || endY >=GUI.canvasHeight)
             return ;
-//        System.out.println(width);
-//        System.out.println(height);
-
-
+        
         endX = clamp(endX, 0, GUI.canvasWidth-1);
         endY = clamp(endY, 0, GUI.canvasHeight-1);
         startX = clamp(startX, 0, GUI.canvasWidth-1);
@@ -154,13 +146,6 @@ public class CanvasPanel extends JPanel {
 
         int width = Math.abs(endX - startX+1);
         int height = Math.abs(endY - startY+1);
-
-//        System.out.println(topLeft.y);
-//        System.out.println(startX);
-//        System.out.println(startY);
-//        System.out.println(width);
-//        System.out.println(height);
-//        System.out.println();
 
         startY = getHeight()-startY -1;
 
