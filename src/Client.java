@@ -122,9 +122,7 @@ public class Client {
                         throw new RuntimeException(e);
                     }
                     try {
-                        synchronized (udpSocket){
-                            udpSocket.send(packet);
-                        }
+                        udpSocket.send(packet);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -198,10 +196,7 @@ public class Client {
                     Input input=  new Input(controller.iswHeld(), controller.isaHeld(),controller.issHeld(),controller.isdHeld() );
                     DatagramPacket packet = MessageHelper.createUdpPacket(new MovementMessage(id, input, controller.getPlayerKirby().getPosition()),
                              tcpSocket.getInetAddress(), udpSendPort);
-                    synchronized (udpSocket){
-                        udpSocket.send(packet);
-                    }
-
+                    udpSocket.send(packet);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
