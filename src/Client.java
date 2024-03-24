@@ -168,10 +168,7 @@ public class Client {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 while(true){
                     try {
-                        synchronized (udpSocket){
-                            udpSocket.receive(packet);
-                        }
-
+                        udpSocket.receive(packet);
                         ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData());
                         ObjectInputStream objStream = new ObjectInputStream(byteStream);
                         Message message = (Message) objStream.readObject();
