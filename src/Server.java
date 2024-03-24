@@ -1,4 +1,3 @@
-import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -15,7 +14,7 @@ public class Server{
     private ServerController serverController;
     private GUI serverGUI;
     private LinkedList<Message> messageQueue;
-
+    private DatagramSocket FUCKYOU;
     private class ServerController extends Controller{
         @Override
         public void update() {
@@ -39,7 +38,7 @@ public class Server{
     }
     public Server() throws IOException {
         messageQueue = new LinkedList<>();
-
+        FUCKYOU = new DatagramSocket();
         serverController = new ServerController() ;
         serverWorld = new World(serverController);
         serverGUI = new GUI(serverController);
@@ -48,6 +47,8 @@ public class Server{
 
         serverSocket = new ServerSocket(6969);
         clients = new ArrayList<>();
+
+
 
         Thread listenThread = new Thread(new Runnable() {
             @Override
@@ -82,13 +83,16 @@ public class Server{
         private int clientUdpPort;
         private boolean isConnected;
         private DatagramSocket udpSocket;
+        private InetAddress clientAddress;
         public ClientHandler(Client client, Socket socket) throws IOException {
             this.client = client;
             this.socket = socket;
+            clientAddress = socket.getInetAddress();
             this.out = new ObjectOutputStream(socket.getOutputStream());
             this.in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
             udpSocket = new DatagramSocket();
+            System.out.println("ADDED CLIENT UDP SOCKET ON: "+udpSocket.getLocalSocketAddress());
         }
 
         @Override
@@ -101,7 +105,7 @@ public class Server{
                 out.writeObject(serverWorld);
                 out.writeInt(udpSocket.getLocalPort());
                 out.flush();
-                udpSocket.setSoTimeout(CLIENT_TIMEOUT);
+//                udpSocket.setSoTimeout(CLIENT_TIMEOUT);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -157,20 +161,16 @@ public class Server{
             throw new RuntimeException(e);
         }
     }
-    private void broadcastMessageUDP(ClientHandler sourceClientHandler, Message message){
+    private void broadcastMessageUDP(ClientHandler sourceClientHandler, Message message) throws SocketException {
         try {
             DatagramPacket packet = MessageHelper.createUdpPacket(message);
             for(ClientHandler clientHandler: clients){
 //                if(sourceClientHandler==clientHandler) continue;
-                packet.setPort(clientHandler.clientUdpPort);
-                packet.setAddress(clientHandler.socket.getInetAddress());
-
-
-
-
                 if(clientHandler.isConnected){
-                    System.out.println("SENDING TO: "+clientHandler.socket.getInetAddress() +" AT PORT: "+clientHandler.clientUdpPort);
-                    sourceClientHandler.udpSocket.send(packet);
+                    packet.setPort(clientHandler.clientUdpPort);
+                    packet.setAddress(clientHandler.clientAddress);
+                    System.out.println(packet.getSocketAddress());
+                    FUCKYOU.send(packet    );
                 }
             }
             System.out.println();

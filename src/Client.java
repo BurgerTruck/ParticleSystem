@@ -107,7 +107,7 @@ public class Client {
         controller.setPlayerKirby(world.getKirby(id));
         controller.start();
         startUdpListeningThread();
-        startHeartbeatThread();
+//        startHeartbeatThread();
         startTcpListeningThread();
     }
     private void startHeartbeatThread(){

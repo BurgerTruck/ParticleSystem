@@ -16,6 +16,7 @@ public class MessageHelper {
         ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
         ObjectOutputStream objStream = new ObjectOutputStream(byteStream);
         objStream.writeObject(object);
+
         byte[] data = byteStream.toByteArray();
 //        System.out.println("CREATED MESSAGE WITH LENGTH: "+data.length);
         DatagramPacket packet = new DatagramPacket(data,0, data.length);
