@@ -169,7 +169,6 @@ public class Server{
                 if(clientHandler.isConnected){
                     packet.setPort(clientHandler.clientUdpPort);
                     packet.setAddress(clientHandler.clientAddress);
-                    System.out.println(packet.getSocketAddress());
                     clientHandler.udpSocket.send(packet    );
                 }
             }
