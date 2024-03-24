@@ -151,7 +151,6 @@ public class Server{
                 if(clientHandler.isConnected){
                     clientHandler.out.writeObject(message);
                     clientHandler.out.flush();
-
                 }
             }
         } catch (IOException e) {
@@ -159,16 +158,22 @@ public class Server{
         }
     }
     private void broadcastMessageUDP(ClientHandler sourceClientHandler, Message message){
-        try {;
+        try {
             DatagramPacket packet = MessageHelper.createUdpPacket(message);
             for(ClientHandler clientHandler: clients){
 //                if(sourceClientHandler==clientHandler) continue;
+                packet.setPort(clientHandler.clientUdpPort);
+                packet.setAddress(clientHandler.socket.getInetAddress());
+
+
+
+
                 if(clientHandler.isConnected){
-                    packet.setPort(clientHandler.clientUdpPort);
-                    packet.setAddress(clientHandler.socket.getInetAddress());
+                    System.out.println("SENDING TO: "+clientHandler.socket.getInetAddress() +" AT PORT: "+clientHandler.clientUdpPort);
                     sourceClientHandler.udpSocket.send(packet);
                 }
             }
+            System.out.println();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

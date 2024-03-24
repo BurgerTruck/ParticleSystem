@@ -21,7 +21,7 @@ public class Client {
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
-    public static final String serverAddress = "localhost";
+    public static final String serverAddress = "25.5.196.38";
     private class ClientController extends Controller{
         @Override
         public void keyInput(KeyEvent e, boolean pressed) {
@@ -122,7 +122,9 @@ public class Client {
                         throw new RuntimeException(e);
                     }
                     try {
-                        udpSocket.send(packet);
+                        synchronized (udpSocket){
+                            udpSocket.send(packet);
+                        }
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -166,7 +168,10 @@ public class Client {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 while(true){
                     try {
-                        udpSocket.receive(packet);
+                        synchronized (udpSocket){
+                            udpSocket.receive(packet);
+                        }
+
                         ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData());
                         ObjectInputStream objStream = new ObjectInputStream(byteStream);
                         Message message = (Message) objStream.readObject();
@@ -196,7 +201,10 @@ public class Client {
                     Input input=  new Input(controller.iswHeld(), controller.isaHeld(),controller.issHeld(),controller.isdHeld() );
                     DatagramPacket packet = MessageHelper.createUdpPacket(new MovementMessage(id, input, controller.getPlayerKirby().getPosition()),
                              tcpSocket.getInetAddress(), udpSendPort);
-                    udpSocket.send(packet);
+                    synchronized (udpSocket){
+                        udpSocket.send(packet);
+                    }
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
