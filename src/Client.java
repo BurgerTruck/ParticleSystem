@@ -1,6 +1,8 @@
+import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -22,7 +24,7 @@ public class Client {
     private ObjectOutputStream out;
     private ObjectInputStream in;
 
-    public static final String serverAddress = "25.5.196.38";
+    public static final String serverAddress = "localhost";
     private class ClientController extends Controller{
         @Override
         public void keyInput(KeyEvent e, boolean pressed) {
@@ -41,27 +43,31 @@ public class Client {
             }
         }
         @Override
-        public void update() {
-            synchronized (messageQueue){
-                while(!messageQueue.isEmpty()){
-                    Message message = messageQueue.poll();
-                    System.out.println("PROCESSING MESSAGE: "+message);
-                    switch(message.type){
-                        case MOVE:
-                            MovementMessage movementMessage = (MovementMessage) message;
-                            world.getKirby(message.clientId).setPosition(((MovementMessage) message).position);
-                            controller.updateInput(message.clientId, movementMessage.input);
-                            break;
-                        case JOIN:
-                            world.addKirby(message.clientId, new Kirby(((JoinMessage)message).joinColor));
-                            break;
-                        case DISCONNECT:
-                            world.removeKirby(message.clientId);
+        public void update() throws IOException {
+            canvas.clearBackBuffer();
+            canvas.drawFrontBuffer();
+//            world.update();
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    @Override
+                    public void run() {
+                        canvas.repaint();
                     }
-                }
+                });
+            } catch (InterruptedException | InvocationTargetException e) {
+                throw new RuntimeException(e);
             }
-            super.update();
+            frames++;
         }
+
+        @Override
+        public boolean isExplorer() {
+            return true;
+        }
+//        @Override
+//        protected void updateViewBox(){
+//
+//        }
     }
 
     public Client(int id) {
@@ -95,24 +101,9 @@ public class Client {
         int id = in.readInt();
         System.out.println("CLIENT ID: "+id);
         setId(id);
-//
-//
-//        //Get world from server
-        World world = (World) in.readObject();
-        world.setController(controller);
-
         udpSendPort  = in.readInt();
-
         System.out.println("SERVER UDP PORT: "+udpSendPort);
         //client gets newly created kirby from server
-
-        JoinMessage joinMessage = (JoinMessage) in.readObject();
-
-        for (Kirby kirby: world.getKirbies()){
-            kirby.initializeColor();
-        }
-        controller.world.addKirby(id, new Kirby(joinMessage.joinColor));
-        controller.setPlayerKirby(world.getKirby(id));
         controller.start();
 
         startUdpListeningThread();
@@ -171,19 +162,22 @@ public class Client {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                byte[] buffer = new byte[512];
+                byte[] buffer = new byte[16384];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 while(true){
                     try {
                         udpSocket.receive(packet);
                         ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData());
                         ObjectInputStream objStream = new ObjectInputStream(byteStream);
-                        Message message = (Message) objStream.readObject();
-                        System.out.println("GOT MESSAGE: " +message);
-                        synchronized (messageQueue){
-                            messageQueue.add(message);
+                        World periphery = (World) objStream.readObject();
+                        controller.setWorld(periphery);
+                        for(Kirby kirby:periphery.getKirbies()){
+                            kirby.initializeColor();
                         }
-
+                        Kirby playerKirby = periphery.getKirby(id   );
+                        controller.setPlayerKirby(playerKirby);
+                        controller.updateViewBox();
+//                        System.out.println(periphery.kirbies);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     } catch (ClassNotFoundException e) {
@@ -203,7 +197,7 @@ public class Client {
             public void run() {
                 try {
                     Input input=  new Input(controller.iswHeld(), controller.isaHeld(),controller.issHeld(),controller.isdHeld() );
-                    DatagramPacket packet = MessageHelper.createUdpPacket(new MovementMessage(id, input, controller.getPlayerKirby().getPosition()),
+                    DatagramPacket packet = MessageHelper.createUdpPacket(new MovementMessage(id, input),
                              tcpSocket.getInetAddress(), udpSendPort);
                     udpSocket.send(packet);
                 } catch (IOException e) {

@@ -16,7 +16,7 @@ public class Controller implements Runnable{
     private boolean isExplorer;
     protected World world;
     protected CanvasPanel canvas;
-    private int frames = 0;
+    protected int frames = 0;
 
     private boolean wHeld;
     private boolean aHeld;
@@ -24,7 +24,7 @@ public class Controller implements Runnable{
     private boolean sHeld;
     public Controller(){
         isExplorer = false;
-        updateViewBox();
+//        updateViewBox();
     }
 
     private double getElapsed(){
@@ -46,7 +46,7 @@ public class Controller implements Runnable{
         updateViewBox();
     }
 
-    private void updateViewBox(){
+    protected void updateViewBox(){
         if(isExplorer()) {
             bottomLeftX = ( playerKirby.getX() - Config.halfEWidth);
             bottomLeftY =  (playerKirby.getY() - Config.halfEHeight);

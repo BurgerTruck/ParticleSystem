@@ -185,6 +185,7 @@ public class CanvasPanel extends JPanel {
         double x = kirby.getX();
         double y = kirby.getY();
         if(!controller.inViewBox( x,  y, Config.halfKirbyWidth, Config.halfKirbyHeight)) return;
+        System.out.println("DRAWING KIRBY");
         int[] localPosition = controller.transformLocalPosition(x, y);
         int drawX = localPosition[0];
         int drawY = localPosition[1];
