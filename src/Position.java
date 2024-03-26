@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 public class Position implements Serializable
 {
@@ -18,4 +19,15 @@ public class Position implements Serializable
                 '}';
     }
 
+    public byte[] toBytes(){
+        ByteBuffer buffer = ByteBuffer.allocate(numBytes());
+        buffer.putDouble(x);
+        buffer.putDouble(y);
+        return buffer.array();
+    }
+
+
+    public static int numBytes(){
+        return 2*Double.BYTES;
+    }
 }

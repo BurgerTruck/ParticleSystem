@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 public class Kirby implements Serializable {
@@ -17,8 +18,8 @@ public class Kirby implements Serializable {
     public static final int NUM_FRAMES_WALKING = 10;
 
 
-    private double spriteSpeedX = 30;
-    private double spriteSpeedY = 30;
+    private static double spriteSpeedX = 30;
+    private static double spriteSpeedY = 30;
     private boolean isWalking = false;
 
     private int frameCol = 0;
@@ -198,5 +199,41 @@ public class Kirby implements Serializable {
 
     public void setPosition(Position p) {
         this.p = p;
+    }
+
+    public byte[] toBytes(){
+        ByteBuffer buffer = ByteBuffer.allocate( numBytes());
+        byte[] pBytes = p.toBytes();
+        // position -> animationSeconds -> frameCol -> frameRow -> wHeld -> aHeld -> sHeld -> dHeld -> horizontalFlipped -> isWalking -> Color
+        boolean[] booleans = new boolean[6];
+        booleans[0] = wHeld;
+        booleans[1] = aHeld;
+        booleans[2] = sHeld;
+        booleans[3] = dHeld;
+        booleans[4] = horizontalFlipped;
+        booleans[5] = isWalking;
+
+
+
+        buffer.put(pBytes);
+        buffer.putDouble(animationSeconds);
+        buffer.putInt(frameCol);
+        buffer.putInt(frameRow);
+        int booleanByte = 0b0;
+        int mask = 0b1;
+        for(int i = 0; i < booleans.length; i++){
+            if(booleans[i]){
+                booleanByte  = (booleanByte|mask);
+                mask = (mask <<1);
+            }
+        }
+        buffer.put((byte)booleanByte    );
+        buffer.putInt(color.getRed());
+        buffer.putInt(color.getBlue());
+        buffer.putInt(color.getGreen());
+        return buffer.array();
+    }
+    public static int numBytes(){
+        return Position.numBytes() +   Double.BYTES +Integer.BYTES*2 + 6 + Integer.BYTES*3
     }
 }

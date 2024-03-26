@@ -1,4 +1,7 @@
+import com.sun.javafx.image.ByteToBytePixelConverter;
+
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -6,8 +9,7 @@ import java.util.HashSet;
 
 public class World implements Serializable {
     private ArrayList<Particle> particles;
-    public HashMap<Integer, Kirby> kirbies;
-
+    public  HashMap<Integer, Kirby> kirbies;
     private transient Controller controller;
     private static  Thread[] threads = new Thread[Config.NUM_THREADS];
 
@@ -78,5 +80,11 @@ public class World implements Serializable {
 
     public void removeKirby(int id  ){
         kirbies.remove(id);
+    }
+
+    public byte[] toBytes(){
+        int particlesSize = particles.size()    ;
+        int kirbySize = kirbies.size();
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + particlesSize * Position.numBytes() + kirbySize * (Integer.BYTES + ) )
     }
 }

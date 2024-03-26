@@ -4,6 +4,7 @@ import java.util.ArrayList;
 public class Particle implements Serializable {
     Position p;
     Position prev;
+
     double speed; //pixels/s
     double angle;
 
