@@ -6,14 +6,17 @@ import java.util.HashSet;
 
 public class World implements Serializable {
     private ArrayList<Particle> particles;
-    private ArrayList<Wall> walls;
     public HashMap<Integer, Kirby> kirbies;
 
     private transient Controller controller;
     private static  Thread[] threads = new Thread[Config.NUM_THREADS];
+
+    public World(ArrayList<Particle> particles, HashMap<Integer, Kirby> kirbies){
+        this.particles = particles;
+        this.kirbies = kirbies;
+    }
     public World(Controller controller){
         particles = new ArrayList<>();
-        walls = new ArrayList<>();
         kirbies = new HashMap<>();
 
         setController(controller);
@@ -21,10 +24,6 @@ public class World implements Serializable {
 
     public ArrayList<Particle> getParticles() {
         return particles;
-    }
-
-    public ArrayList<Wall> getWalls() {
-        return walls;
     }
 
     public void addKirby(int id, Kirby kirby){
@@ -57,7 +56,7 @@ public class World implements Serializable {
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < getParticles().size(); j += Config.NUM_THREADS) {
                     Particle particle = getParticles().get(j);
-                    particle.move(getWalls(), elapsed);
+                    particle.move( elapsed);
                     controller.getCanvas().drawParticle(particle, finalI);
                 }
             });

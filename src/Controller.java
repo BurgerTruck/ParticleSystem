@@ -1,6 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -60,6 +61,21 @@ public class Controller implements Runnable{
     }
 
     public boolean inViewBox(double x, double y, int halfWidth, int halfHeight){
+        if(x + halfWidth < bottomLeftX-1) return false;
+        if(x - halfWidth> topRightX+1) return false;
+        if(y + halfHeight < bottomLeftY-1) return false;
+        if(y - halfHeight > topRightY+1) return false;
+        return true;
+    }
+
+    public static boolean inViewBox(Position kirbyPosition, Position entityPosition, int halfWidth, int halfHeight){
+        double bottomLeftX = (kirbyPosition.x - Config.halfEWidth);
+        double bottomLeftY =  (kirbyPosition.y - Config.halfEHeight);
+        double topRightX =  (kirbyPosition.x + Config.halfEWidth);
+        double topRightY =  (kirbyPosition.y + Config.halfEHeight);
+
+        double x = entityPosition.x;
+        double y = entityPosition.y;
         if(x + halfWidth < bottomLeftX-1) return false;
         if(x - halfWidth> topRightX+1) return false;
         if(y + halfHeight < bottomLeftY-1) return false;
@@ -136,7 +152,7 @@ public class Controller implements Runnable{
     public void setWorld(World world) {
         this.world = world;
     }
-    public void update(){
+    public void update() throws IOException {
         canvas.clearBackBuffer();
         if(playerKirby!=null) playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
 
@@ -159,7 +175,11 @@ public class Controller implements Runnable{
     @Override
     public void run() {
         while(true){
-            update();
+            try {
+                update();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
     public Collection<Kirby> getKirbies(){

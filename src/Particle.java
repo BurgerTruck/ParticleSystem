@@ -25,23 +25,10 @@ public class Particle implements Serializable {
         return new Position(p.x+dx*timePassed, p.y+dy*timePassed);
     }
 
-    public void move(ArrayList<Wall> walls, double timePassed){
+    public void move( double timePassed){
         Position next = getNextPosition(timePassed);
-        Position temp = p;
         boolean collided = false;
-        for (int i = 0; i < walls.size(); i++) {
-            Wall wall = walls.get(i);
-            if (wall.checkIntersection(temp, next, wall.p1, wall.p2)) {
-                Position wallNormal = wall.getPerpendicularVector();
-                double dotProduct = dx * wallNormal.x + dy * wallNormal.y;
 
-                dx -= 2 * dotProduct * wallNormal.x;
-                dy -= 2 * dotProduct * wallNormal.y;
-
-                collided = true;
-                break;
-            }
-        }
         if (next.x < 0 || next.x >= GUI.canvasWidth) {
             dx = -dx;
             collided = true;

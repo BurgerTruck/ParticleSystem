@@ -18,7 +18,7 @@ public class Server{
     private LinkedList<Message> messageQueue;
     private class ServerController extends Controller{
         @Override
-        public void update() {
+        public void update() throws IOException {
             synchronized (messageQueue){
                 while(!messageQueue.isEmpty()){
                     Message message = messageQueue.poll();
@@ -29,7 +29,33 @@ public class Server{
                     }
                 }
             }
+
             super.update();
+            for(ClientHandler clientHandler:clients){
+                int id = clientHandler.client.id;
+                Kirby kirby = world.getKirby(id );
+
+                Position kirbyPosition = kirby.getPosition();
+                ArrayList<Particle> peripheryParticles = new ArrayList<>(   );
+                HashMap<Integer, Kirby> peripheryKirbies = new HashMap<>(   );
+
+                for(Particle p: world.getParticles()){
+                    if(Controller.inViewBox(kirbyPosition, p.p, Config.halfParticleWidth, Config.halfParticleHeight     )){
+                        peripheryParticles.add(p    );
+                    }
+                }
+                for(Map.Entry<Integer, Kirby> entry: world.kirbies.entrySet()){
+                    Kirby k = entry.getValue();
+                    int i = entry.getKey();
+                    if(Controller.inViewBox(kirbyPosition, k.getPosition(), Config.halfKirbyWidth, Config.halfKirbyHeight     )){
+                        peripheryKirbies.put(i, k   );
+                    }
+                }
+                World periphery = new World(peripheryParticles, peripheryKirbies    );
+
+                DatagramPacket packet = MessageHelper.createUdpPacket(periphery, clientHandler.clientAddress, clientHandler.clientUdpPort);
+                clientHandler.udpSocket.send(packet);
+            }
         }
 
         @Override
@@ -70,7 +96,7 @@ public class Server{
                         clients.add(handler);
                         handler.start();
 
-                        broadcastMessageTCP(handler, new JoinMessage(clientId, newColor));
+//                        broadcastMessageTCP(handler, new JoinMessage(clientId, newColor));
                         //server sends world with new kirby to client
 
                     } catch (IOException e) {
@@ -110,9 +136,9 @@ public class Server{
                 clientUdpPort = in.readInt();
                 System.out.println("READ CLIENT UDP PORT: "+clientUdpPort);
                 out.writeInt(client.id);
-                out.writeObject(serverWorld);
+//                out.writeObject(serverWorld);
                 out.writeInt(udpSocket.getLocalPort());
-                out.writeObject(new JoinMessage(client.id, clientColor));
+//                out.writeObject(new JoinMessage(client.id, clientColor));
                 out.flush();
                 udpSocket.setSoTimeout(CLIENT_TIMEOUT);
             } catch (IOException e) {
@@ -133,10 +159,10 @@ public class Server{
                     synchronized (messageQueue) {
                         messageQueue.add(message);
                     }
-                    if (message.type == Message.MessageType.MOVE) {
-                        ((MovementMessage) message).position = serverWorld.getKirby(message.clientId).getPosition();
-                        broadcastMessageUDP(this, message);
-                    }
+//                    if (message.type == Message.MessageType.MOVE) {
+//                        ((MovementMessage) message).position = serverWorld.getKirby(message.clientId).getPosition();
+//                        broadcastMessageUDP(this, message);
+//                    }
                 }catch(SocketTimeoutException e){
 
                     break;
