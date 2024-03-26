@@ -90,6 +90,7 @@ public class World implements Serializable {
         }
         buffer.putInt(kirbySize );
         Set<Map.Entry<Integer, Kirby>> entries = kirbies.entrySet();
+
         for(Map.Entry<Integer, Kirby> entry: entries){
             buffer.putInt(entry.getKey());
             buffer.put(entry.getValue().toBytes()   );

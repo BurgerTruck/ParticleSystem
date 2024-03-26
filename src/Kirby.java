@@ -206,7 +206,7 @@ public class Kirby implements Serializable {
         ByteBuffer buffer = ByteBuffer.allocate( numBytes());
         byte[] pBytes = p.toBytes();
         // position -> animationSeconds -> frameCol -> frameRow -> wHeld -> aHeld -> sHeld -> dHeld -> horizontalFlipped -> isWalking -> Color
-        boolean[] booleans = new boolean[1];
+        boolean[] booleans = new boolean[2];
 //        booleans[0] = wHeld;
 //        booleans[1] = aHeld;
 //        booleans[2] = sHeld;
@@ -214,10 +214,11 @@ public class Kirby implements Serializable {
 //        booleans[4] = horizontalFlipped;
 //        booleans[5] = isWalking;
         booleans[0] = horizontalFlipped;
-
+        booleans[1] = isWalking;
 
         buffer.put(pBytes);
         buffer.putDouble(animationSeconds);
+
         buffer.putInt(frameCol);
         buffer.putInt(frameRow);
 
@@ -226,9 +227,10 @@ public class Kirby implements Serializable {
         for(int i = 0; i < booleans.length; i++){
             if(booleans[i]){
                 booleanByte  = (booleanByte|mask);
-                mask = (mask <<1);
             }
+            mask = (mask <<1);
         }
+//        System.out.println(mask);
         // if horizontalFlipped is True then booleanByte = 0b00000001 else then 0b00000000
         buffer.put((byte)booleanByte    );
 
@@ -238,8 +240,8 @@ public class Kirby implements Serializable {
             buffer.putInt(0 );
         }else{
             buffer.putInt(color.getRed());
-            buffer.putInt(color.getBlue());
             buffer.putInt(color.getGreen());
+            buffer.putInt(color.getBlue());
         }
 
         return buffer.array();
@@ -251,23 +253,33 @@ public class Kirby implements Serializable {
     public static Kirby decodeBytes(byte[] bytes){
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
 
+        byte[] pBuffer = new byte[Position.numBytes()];
+        buffer.get(pBuffer);
+        Position position = Position.decodeBytes(pBuffer);
         double animationSeconds = buffer.getDouble();
         int frameCol = buffer.getInt();
         int frameRow = buffer.getInt();
 
         byte booleanByte = buffer.get();
-        boolean horizontalFlipped = (booleanByte & 0b00000001) == 1;
+        boolean horizontalFlipped = (booleanByte & 0b00000001) > 0;
+        boolean isWalking = (booleanByte & 0b00000010) >0;
         int red = buffer.getInt();
-        int blue = buffer.getInt();
         int green = buffer.getInt();
+        int blue = buffer.getInt();
+
         Color color;
         if(red==0 &&blue==0 && green ==0) color = null;
         else color = new Color(red, green, blue);
         Kirby ret = new Kirby(color );
+        ret.p = position;
         ret.animationSeconds = animationSeconds;
         ret.horizontalFlipped = horizontalFlipped;
         ret.frameCol = frameCol;
         ret.frameRow = frameRow;
-        return new Kirby(color);
+        ret.isWalking = isWalking;
+//        System.out.println(ret.horizontalFlipped);
+//        System.out.println(ret.isWalking);
+//        System.out.println();
+        return ret;
     }
 }

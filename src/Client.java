@@ -177,16 +177,19 @@ public class Client {
 //                        ObjectInputStream objStream = new ObjectInputStream(byteStream);
 //                        World periphery = (World) objStream.readObject();
                         World periphery = World.decodeBytes(buffer);
+//                        System.out.println(periphery.getParticles());
                         for(Kirby kirby:periphery.getKirbies()){
                             kirby.initializeColor();
                         }
+
                         Kirby playerKirby = periphery.getKirby(id   );
+//                        System.out.println(playerKirby.getPosition());
                         controller.setPlayerKirby(playerKirby);
                         controller.updateViewBox();
 
                         controller.setWorld(periphery);
                         periphery.setController(controller);
-
+//                        System.out.println(periphery.getParticles());
 //                        System.out.println(periphery.kirbies);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
