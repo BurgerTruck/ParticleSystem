@@ -40,7 +40,7 @@ public class Kirby implements Serializable {
     private boolean horizontalFlipped = false;
     static{
         try {
-            SPRITE_SHEET = ImageIO.read((Kirby.class.getResource("kiby_gray.png")));
+            SPRITE_SHEET = ImageIO.read((Kirby.class.getResource("kirby_what.png")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
