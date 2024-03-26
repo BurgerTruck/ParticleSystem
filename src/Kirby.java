@@ -232,9 +232,16 @@ public class Kirby implements Serializable {
         // if horizontalFlipped is True then booleanByte = 0b00000001 else then 0b00000000
         buffer.put((byte)booleanByte    );
 
-        buffer.putInt(color.getRed());
-        buffer.putInt(color.getBlue());
-        buffer.putInt(color.getGreen());
+        if(color==null){
+            buffer.putInt(0 );
+            buffer.putInt(0 );
+            buffer.putInt(0 );
+        }else{
+            buffer.putInt(color.getRed());
+            buffer.putInt(color.getBlue());
+            buffer.putInt(color.getGreen());
+        }
+
         return buffer.array();
     }
     public static int numBytes(){
@@ -253,8 +260,9 @@ public class Kirby implements Serializable {
         int red = buffer.getInt();
         int blue = buffer.getInt();
         int green = buffer.getInt();
-
-        Color color = new Color(red, green, blue);
+        Color color;
+        if(red==0 &&blue==0 && green ==0) color = null;
+        else color = new Color(red, green, blue);
         Kirby ret = new Kirby(color );
         ret.animationSeconds = animationSeconds;
         ret.horizontalFlipped = horizontalFlipped;
