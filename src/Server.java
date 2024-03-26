@@ -16,9 +16,10 @@ public class Server{
     private ServerController serverController;
     private GUI serverGUI;
     private LinkedList<Message> messageQueue;
+    private Integer numConnected = 0;
     private class ServerController extends Controller{
         @Override
-        public void update() throws IOException {
+        public void update() throws IOException, InterruptedException {
             synchronized (messageQueue){
                 while(!messageQueue.isEmpty()){
                     Message message = messageQueue.poll();
@@ -31,47 +32,61 @@ public class Server{
             }
 
             super.update();
+
+            Integer numClients = 0;
+            Integer size;
+            synchronized (numClients){
+                numClients = numConnected;
+                size = clients.size();
+            }
+            Thread[] threads = new Thread[numClients];
+            int clientIndex = 0;
             for(int i = 0; i < clients.size(); i++){
                 ClientHandler clientHandler = clients.get(i);
+                if(!clientHandler.isConnected) continue;
                 int id = clientHandler.client.id;
-                Kirby kirby = world.getKirby(id );
+                Kirby kirby = serverWorld.getKirby(id );
+                if(kirby==null)continue;
+                threads[clientIndex] = new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Position kirbyPosition = kirby.getPosition();
+                        ArrayList<Particle> peripheryParticles = new ArrayList<>(   );
+                        HashMap<Integer, Kirby> peripheryKirbies = new HashMap<>(   );
 
-                Position kirbyPosition = kirby.getPosition();
-                ArrayList<Particle> peripheryParticles = new ArrayList<>(   );
-                HashMap<Integer, Kirby> peripheryKirbies = new HashMap<>(   );
-
-//                for(Particle p: world.getParticles()){
-//
-//
-//                }
-                for(int j = 0; j < world.getParticles().size(); j++){
-                    Particle p = world.getParticles().get(j);
-                    if(Controller.inViewBox(kirbyPosition, p.p, Config.halfParticleWidth, Config.halfParticleHeight     )){
+                        for(int j = 0; j < world.getParticles().size(); j++){
+                            Particle p = world.getParticles().get(j);
+                            if(Controller.inViewBox(kirbyPosition, p.p, Config.halfParticleWidth, Config.halfParticleHeight     )){
 //                        System.out.println(p.p);
 //                        System.out.println(kirbyPosition);
 //                        System.out.println();
-                        peripheryParticles.add(p    );
-                    }
-                }
-                for(Map.Entry<Integer, Kirby> entry: world.kirbies.entrySet()){
-                    Kirby k = entry.getValue();
-                    int entryId = entry.getKey();
-                    if(Controller.inViewBox(kirbyPosition, k.getPosition(), Config.halfKirbyWidth, Config.halfKirbyHeight     )){
-                        peripheryKirbies.put(entryId, k   );
-                    }
-                }
-                World periphery = new World(peripheryParticles, peripheryKirbies    );
+                                peripheryParticles.add(p    );
+                            }
+                        }
+                        for(Map.Entry<Integer, Kirby> entry: world.kirbies.entrySet()){
+                            Kirby k = entry.getValue();
+                            int entryId = entry.getKey();
+                            if(Controller.inViewBox(kirbyPosition, k.getPosition(), Config.halfKirbyWidth, Config.halfKirbyHeight     )){
+                                peripheryKirbies.put(entryId, k   );
+                            }
+                        }
+                        World periphery = new World(peripheryParticles, peripheryKirbies    );
 //                DatagramPacket packet = MessageHelper.createUdpPacket(periphery, clientHandler.clientAddress, clientHandler.clientUdpPort);
-                byte[] peripheryBytes = periphery.toBytes();
-                DatagramPacket packet = new DatagramPacket(peripheryBytes, peripheryBytes.length, clientHandler.clientAddress, clientHandler.clientUdpPort );
-                try{
-                    clientHandler.udpSocket.send(packet);
-                }catch(Exception e){
-                    System.out.println(e.getMessage());
+                        byte[] peripheryBytes = periphery.toBytes();
+                        DatagramPacket packet = new DatagramPacket(peripheryBytes, peripheryBytes.length, clientHandler.clientAddress, clientHandler.clientUdpPort );
+                        try{
+                            clientHandler.udpSocket.send(packet);
+                        }catch(Exception e){
+                            System.out.println(e.getMessage());
+                        }
+                    }
+                });
+                threads[clientIndex].start();
+                for(Thread thread: threads){
+                    if(thread == null) continue;
+                    thread.join();
                 }
-
 //                }
-
             }
         }
 
@@ -112,7 +127,9 @@ public class Server{
                         serverWorld.addKirby(clientId, clientKirby);
                         clients.add(handler);
                         handler.start();
-
+                        synchronized (numConnected){
+                            numConnected++;
+                        }
 //                        broadcastMessageTCP(handler, new JoinMessage(clientId, newColor));
                         //server sends world with new kirby to client
 
@@ -194,40 +211,16 @@ public class Server{
             System.out.println("LOST CONNECTION WITH: "+client.id);
             isConnected = false;
             serverWorld.removeKirby(client.id);
-            broadcastMessageTCP(this, new Message(client.id, Message.MessageType.DISCONNECT));
+
+            synchronized (numConnected){
+                numConnected--;
+            }
+
+
+//            broadcastMessageTCP(this, new Message(client.id, Message.MessageType.DISCONNECT));
 
         }
 
-    }
-    private void broadcastMessageTCP(ClientHandler sourceClientHandler, Message message){
-        try {
-            for(ClientHandler clientHandler: clients){
-                if(sourceClientHandler==clientHandler) continue;
-                System.out.println("SENDING MESSAGE: "+message );
-                if(clientHandler.isConnected){
-                    clientHandler.out.writeObject(message);
-                    clientHandler.out.flush();
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    private void broadcastMessageUDP(ClientHandler sourceClientHandler, Message message) throws SocketException {
-        try {
-            DatagramPacket packet = MessageHelper.createUdpPacket(message);
-            for(ClientHandler clientHandler: clients){
-//                if(sourceClientHandler==clientHandler) continue;
-                if(clientHandler.isConnected){
-                    packet.setPort(clientHandler.clientUdpPort);
-                    packet.setAddress(clientHandler.clientAddress);
-                    clientHandler.udpSocket.send(packet    );
-                }
-            }
-            System.out.println();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
     public static void main(String[] args) throws IOException {
         Server server= new Server() ;

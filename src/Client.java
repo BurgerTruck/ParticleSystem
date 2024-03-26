@@ -48,11 +48,18 @@ public class Client {
         }
 
         @Override
-        public void update() throws IOException {
+        public void update() throws IOException, InterruptedException {
             canvas.clearBackBuffer();
 
-            if(controller.world!=null)controller.world.update(getElapsed());
+//            if(controller.world!=null)controller.world.update(getElapsed());
+            if(controller.world!=null){
+                synchronized (controller){
+                    canvas.drawParticles();
+                    canvas.drawKirbies();
+                }
+            }
             canvas.drawFrontBuffer();
+
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     @Override
@@ -66,6 +73,8 @@ public class Client {
             frames++;
         }
 
+        @Override
+        public void setExplorer(boolean isExplorer) {}
         @Override
         public boolean isExplorer() {
             return true;
@@ -114,7 +123,6 @@ public class Client {
 
         startUdpListeningThread();
         startHeartbeatThread();
-        startTcpListeningThread();
     }
     private void startHeartbeatThread(){
         Thread thread=  new Thread(new Runnable() {
@@ -143,27 +151,6 @@ public class Client {
         });
         thread.start();
     }
-    private void startTcpListeningThread(){
-        Thread thread= new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while(true){
-                    try{
-                        Message message = (Message)in.readObject();
-                        synchronized (messageQueue){
-                            messageQueue.add(message);
-                        }
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-        });
-        thread.start();
-
-    }
     private void startUdpListeningThread(){
         Thread thread = new Thread(new Runnable() {
             @Override
@@ -178,17 +165,13 @@ public class Client {
 //                        World periphery = (World) objStream.readObject();
                         World periphery = World.decodeBytes(buffer);
 //                        System.out.println(periphery.getParticles());
-                        for(Kirby kirby:periphery.getKirbies()){
-                            kirby.initializeColor();
+                        Kirby playerKirby = periphery.getKirby(id   );
+                        synchronized (controller){
+                            controller.setPlayerKirby(playerKirby);
+                            controller.updateViewBox();
+                            controller.setWorld(periphery);
                         }
 
-                        Kirby playerKirby = periphery.getKirby(id   );
-//                        System.out.println(playerKirby.getPosition());
-                        controller.setPlayerKirby(playerKirby);
-                        controller.updateViewBox();
-
-                        controller.setWorld(periphery);
-                        periphery.setController(controller);
 //                        System.out.println(periphery.getParticles());
 //                        System.out.println(periphery.kirbies);
                     } catch (IOException e) {

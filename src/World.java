@@ -1,5 +1,3 @@
-import com.sun.javafx.image.ByteToBytePixelConverter;
-
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -29,7 +27,7 @@ public class World implements Serializable {
         kirbies.put(id,  kirby);
     }
     public void update(double elapsed){
-        updateParticlesAndDrawToBuffer(elapsed);
+        updateParticles(elapsed);
         joinThreads();
         for(Kirby kirby: getKirbies()){
             kirby.updateSpritePosition(elapsed);
@@ -46,7 +44,7 @@ public class World implements Serializable {
             }
         }
     }
-    private void updateParticlesAndDrawToBuffer(double elapsed){
+    private void updateParticles(double elapsed){
 
         for (int i = 0; i < Config.NUM_THREADS; i++) {
             if(i >=getParticles().size()) break;
@@ -55,7 +53,6 @@ public class World implements Serializable {
                 for (int j = finalI; j < getParticles().size(); j += Config.NUM_THREADS) {
                     Particle particle = getParticles().get(j);
                     particle.move( elapsed);
-                    controller.getCanvas().drawParticle(particle, finalI);
                 }
             });
             threads[i].start();

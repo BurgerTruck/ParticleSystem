@@ -16,6 +16,7 @@ public class CanvasPanel extends JPanel {
     private Controller controller;
     private Graphics2D[] bufferGraphics;
     private int pixelSize;
+    private Thread[] threads;
     public CanvasPanel(int width, int height){
         super(true);
         Dimension d = new Dimension(width, height);
@@ -25,6 +26,7 @@ public class CanvasPanel extends JPanel {
         setMaximumSize(d);
         setBackground(Color.WHITE);
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        threads = new Thread[Config.NUM_THREADS];
 
         fpsPanel = new JPanel();
         fpsLabel = new JLabel();
@@ -34,8 +36,8 @@ public class CanvasPanel extends JPanel {
         add(fpsPanel);
 
 
-        buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
-        frontBuffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_RGB);
+        buffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_ARGB);
+        frontBuffer = new BufferedImage(GUI.canvasWidth, GUI.canvasHeight, BufferedImage.TYPE_INT_ARGB);
 
         bufferGraphics = new Graphics2D[Config.NUM_THREADS];
         for(int i = 0; i < Config.NUM_THREADS; i++){
@@ -170,12 +172,7 @@ public class CanvasPanel extends JPanel {
             g2.drawLine(clicked.x, clicked.y, mouse.x, mouse.y);
         }
 
-        for(Kirby kirby: controller.getKirbies()){
-            if(kirby==controller.getPlayerKirby())continue;
-            drawKirby(g2, kirby);
-        }
 
-        drawKirby(g2, controller.getPlayerKirby());
         drawBounds(g2);
     }
     private void drawKirby(Graphics2D g, Kirby kirby){
@@ -211,6 +208,32 @@ public class CanvasPanel extends JPanel {
             drawRectangle(Config.topBoundRect, g);
         }
 
+    }
+    public void drawParticles() throws InterruptedException {
+
+        for (int i = 0; i < Config.NUM_THREADS; i++) {
+            if(i >=controller.getParticles().size()) break;
+            int finalI = i;
+            threads[i] = new Thread(() -> {
+                for (int j = finalI; j < controller.getParticles().size(); j += Config.NUM_THREADS) {
+                    Particle particle = controller.getParticles().get(j);
+                    drawParticle(particle, finalI);
+                }
+            });
+            threads[i].start();
+        }
+            for(Thread thread: threads){
+                if(thread==null) break;
+                thread.join();
+            }
+    }
+    public void drawKirbies(){
+        for(Kirby kirby: controller.getKirbies()){
+            if(kirby==controller.getPlayerKirby())continue;
+            drawKirby(bufferGraphics[0], kirby);
+        }
+
+        drawKirby(bufferGraphics[0], controller.getPlayerKirby());
     }
     private boolean leftClicked = false;
     private Point  clicked = null;

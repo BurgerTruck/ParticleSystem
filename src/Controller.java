@@ -157,11 +157,13 @@ public class Controller implements Runnable{
     public void setWorld(World world) {
         this.world = world;
     }
-    public void update() throws IOException {
+    public void update() throws IOException, InterruptedException {
         canvas.clearBackBuffer();
         if(playerKirby!=null) playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
 
         world.update(getElapsed());
+        canvas.drawParticles();
+        canvas.drawKirbies();
         updateViewBox();
         canvas.drawFrontBuffer();
 
@@ -183,6 +185,8 @@ public class Controller implements Runnable{
             try {
                 update();
             } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
         }

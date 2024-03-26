@@ -1,16 +1,13 @@
 import javax.imageio.ImageIO;
-import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.nio.ShortBuffer;
-import java.util.Objects;
 
 public class Kirby implements Serializable {
     public static final BufferedImage SPRITE_SHEET;
-
+    public static final BufferedImage GRAY_SHEET;
 
     public static final int FRAME_WIDTH = 30;
     public static final int FRAME_HEIGHT = 30;
@@ -40,9 +37,11 @@ public class Kirby implements Serializable {
     public boolean sHeld = false;
     public boolean dHeld = false;
     private boolean horizontalFlipped = false;
+    private BufferedImage spriteImage;
     static{
         try {
             SPRITE_SHEET = ImageIO.read((Kirby.class.getResource("kirby_what.png")));
+            GRAY_SHEET = ImageIO.read((Kirby.class.getResource("kirby_gray.png")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -56,28 +55,17 @@ public class Kirby implements Serializable {
         idleFrameDurations[0] = 3;
     }
     public Kirby(Color tintColor) {
-
         this.color = tintColor;
-        initializeColor();
     }
-    public void initializeColor(){
-        tintedSheet = SPRITE_SHEET;
-//        if(this.color==null){
-//            try {
-//                tintedSheet   = ImageIO.read((Kirby.class.getResource("kirby_what.png")));
-//            } catch (IOException e) {
-//                throw new RuntimeException(e);
-//            }
-//            return;
-//        }
-//        tintedSheet = new BufferedImage(SPRITE_SHEET.getWidth(), SPRITE_SHEET.getHeight(), BufferedImage.TYPE_INT_ARGB );
-//        for (int x = 0; x < SPRITE_SHEET.getWidth(); x++) {
-//            for (int y = 0; y < SPRITE_SHEET.getHeight(); y++) {
-//                int rgb = SPRITE_SHEET.getRGB(x, y);
-//                int newRGB = getNewRGB(this.color, rgb);
-//                tintedSheet.setRGB(x, y, newRGB);
-//            }
-//        }
+    public void tintImage(BufferedImage bufferedImage, Color color){
+
+        for (int x = 0; x < bufferedImage.getWidth(); x++) {
+            for (int y = 0; y < bufferedImage.getHeight(); y++) {
+                int rgb = bufferedImage.getRGB(x, y);
+                int newRGB = getNewRGB(color, rgb);
+                bufferedImage.setRGB(x, y, newRGB);
+            }
+        }
     }
 
     private static int getNewRGB(Color tintColor, int rgb) {
@@ -154,17 +142,22 @@ public class Kirby implements Serializable {
     public void drawSprite(Graphics2D g, int DRAW_X, int DRAW_END_X, int DRAW_Y, int DRAW_END_Y){
         int sx = frameCol * FRAME_WIDTH;
         int sy = frameRow * FRAME_WIDTH;
-        int padding = 0;
-        double ratio = ((double)padding/FRAME_WIDTH);
-        int size = DRAW_END_Y - DRAW_Y+1;
-        padding = (int) Math.ceil(ratio*size);
-        int startX = DRAW_X-padding, endX = DRAW_END_X+padding;
+        int endSX = sx+FRAME_WIDTH;
         if(horizontalFlipped){
-            startX = DRAW_END_X+padding;
-            endX = DRAW_X-padding;
+            int temp = sx;
+            sx = endSX;
+            endSX = temp;
         }
-        g.drawImage(tintedSheet, startX, DRAW_Y-padding, endX, DRAW_END_Y + padding,
-                sx, sy, sx + FRAME_WIDTH, sy + FRAME_HEIGHT, null   );
+        if(color!=null){
+            BufferedImage spriteBuffer = new BufferedImage(FRAME_WIDTH, FRAME_HEIGHT, BufferedImage.TYPE_INT_ARGB);
+            spriteBuffer.getGraphics().drawImage(GRAY_SHEET, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, sx, sy, endSX, sy+FRAME_HEIGHT, null    );
+            tintImage(spriteBuffer, this.color);
+            g.drawImage(spriteBuffer,DRAW_X, DRAW_Y, DRAW_END_X, DRAW_END_Y, 0, 0, FRAME_WIDTH, FRAME_HEIGHT, null);
+        }else{
+            g.drawImage(SPRITE_SHEET, DRAW_X, DRAW_Y, DRAW_END_X, DRAW_END_Y,
+                    sx, sy, endSX, sy + FRAME_HEIGHT, null   );
+        }
+
 
     }
 

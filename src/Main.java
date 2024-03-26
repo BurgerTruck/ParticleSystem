@@ -7,7 +7,7 @@ public class Main {
         World world = new World(controller);
         GUI gui = new GUI(controller);
 
-        Kirby kirby = new Kirby(null);
+        Kirby kirby = new Kirby(Color.RED   );
         world.addKirby(0, kirby);
         controller.setPlayerKirby(kirby);
 
