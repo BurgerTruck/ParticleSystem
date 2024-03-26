@@ -31,7 +31,8 @@ public class Server{
             }
 
             super.update();
-            for(ClientHandler clientHandler:clients){
+            for(int i = 0; i < clients.size(); i++){
+                ClientHandler clientHandler = clients.get(i);
                 int id = clientHandler.client.id;
                 Kirby kirby = world.getKirby(id );
 
@@ -43,8 +44,8 @@ public class Server{
 //
 //
 //                }
-                for(int i = 0; i < world.getParticles().size(); i++){
-                    Particle p = world.getParticles().get(i);
+                for(int j = 0; j < world.getParticles().size(); j++){
+                    Particle p = world.getParticles().get(j);
                     if(Controller.inViewBox(kirbyPosition, p.p, Config.halfParticleWidth, Config.halfParticleHeight     )){
 //                        System.out.println(p.p);
 //                        System.out.println(kirbyPosition);
@@ -54,15 +55,23 @@ public class Server{
                 }
                 for(Map.Entry<Integer, Kirby> entry: world.kirbies.entrySet()){
                     Kirby k = entry.getValue();
-                    int i = entry.getKey();
+                    int entryId = entry.getKey();
                     if(Controller.inViewBox(kirbyPosition, k.getPosition(), Config.halfKirbyWidth, Config.halfKirbyHeight     )){
-                        peripheryKirbies.put(i, k   );
+                        peripheryKirbies.put(entryId, k   );
                     }
                 }
                 World periphery = new World(peripheryParticles, peripheryKirbies    );
 
                 DatagramPacket packet = MessageHelper.createUdpPacket(periphery, clientHandler.clientAddress, clientHandler.clientUdpPort);
-                clientHandler.udpSocket.send(packet);
+//                synchronized (clientHandler.udpSocket){
+                try{
+                    clientHandler.udpSocket.send(packet);
+                }catch(Exception e){
+                    System.out.println(e.getMessage());
+                }
+
+//                }
+
             }
         }
 

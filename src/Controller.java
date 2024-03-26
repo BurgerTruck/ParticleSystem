@@ -85,13 +85,6 @@ public class Controller implements Runnable{
         if(y + halfHeight < bottomLeftY-1) return false;
         if(y - halfHeight > topRightY+1) return false;
 
-        System.out.println(bottomLeftX);
-        System.out.println(bottomLeftY);
-        System.out.println(topRightX);
-        System.out.println(topRightY);
-        System.out.println(x);
-        System.out.println(y);
-        System.out.println();
         return true;
     }
     public void keyInput(KeyEvent e, boolean pressed){

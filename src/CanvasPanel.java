@@ -70,11 +70,6 @@ public class CanvasPanel extends JPanel {
         drawRectangle(p.p, bufferGraphics[bufferGraphicsIndex], halfWidth, halfHeight );
     }
     private void fillRect(int x, int y, int width, int height, Graphics2D g){
-        System.out.println(x);
-        System.out.println(y);
-        System.out.println(width);
-        System.out.println(height);
-        System.out.println();
         g.fillRect(x, y, width, height);
     }
     public void drawFrontBuffer(){
