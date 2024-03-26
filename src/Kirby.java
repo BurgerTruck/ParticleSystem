@@ -40,7 +40,7 @@ public class Kirby implements Serializable {
     private boolean horizontalFlipped = false;
     static{
         try {
-            SPRITE_SHEET = ImageIO.read((Kirby.class.getResource("kirby_gray.png")));
+            SPRITE_SHEET = ImageIO.read((Kirby.class.getResource("kiby_gray.png")));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -59,22 +59,23 @@ public class Kirby implements Serializable {
         initializeColor();
     }
     public void initializeColor(){
-        if(this.color==null){
-            try {
-                tintedSheet   = ImageIO.read((Kirby.class.getResource("kirby_what.png")));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            return;
-        }
-        tintedSheet = new BufferedImage(SPRITE_SHEET.getWidth(), SPRITE_SHEET.getHeight(), BufferedImage.TYPE_INT_ARGB );
-        for (int x = 0; x < SPRITE_SHEET.getWidth(); x++) {
-            for (int y = 0; y < SPRITE_SHEET.getHeight(); y++) {
-                int rgb = SPRITE_SHEET.getRGB(x, y);
-                int newRGB = getNewRGB(this.color, rgb);
-                tintedSheet.setRGB(x, y, newRGB);
-            }
-        }
+        tintedSheet = SPRITE_SHEET;
+//        if(this.color==null){
+//            try {
+//                tintedSheet   = ImageIO.read((Kirby.class.getResource("kirby_what.png")));
+//            } catch (IOException e) {
+//                throw new RuntimeException(e);
+//            }
+//            return;
+//        }
+//        tintedSheet = new BufferedImage(SPRITE_SHEET.getWidth(), SPRITE_SHEET.getHeight(), BufferedImage.TYPE_INT_ARGB );
+//        for (int x = 0; x < SPRITE_SHEET.getWidth(); x++) {
+//            for (int y = 0; y < SPRITE_SHEET.getHeight(); y++) {
+//                int rgb = SPRITE_SHEET.getRGB(x, y);
+//                int newRGB = getNewRGB(this.color, rgb);
+//                tintedSheet.setRGB(x, y, newRGB);
+//            }
+//        }
     }
 
     private static int getNewRGB(Color tintColor, int rgb) {

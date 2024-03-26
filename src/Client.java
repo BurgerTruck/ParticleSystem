@@ -168,7 +168,7 @@ public class Client {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                byte[] buffer = new byte[16384];
+                byte[] buffer = new byte[32356];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 while(true){
                     try {
@@ -185,7 +185,7 @@ public class Client {
 
                         controller.setWorld(periphery);
                         periphery.setController(controller);
-                        
+
 //                        System.out.println(periphery.kirbies);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
