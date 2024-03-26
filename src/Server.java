@@ -61,8 +61,9 @@ public class Server{
                     }
                 }
                 World periphery = new World(peripheryParticles, peripheryKirbies    );
-                DatagramPacket packet = MessageHelper.createUdpPacket(periphery, clientHandler.clientAddress, clientHandler.clientUdpPort);
-
+//                DatagramPacket packet = MessageHelper.createUdpPacket(periphery, clientHandler.clientAddress, clientHandler.clientUdpPort);
+                byte[] peripheryBytes = periphery.toBytes();
+                DatagramPacket packet = new DatagramPacket(peripheryBytes, peripheryBytes.length, clientHandler.clientAddress, clientHandler.clientUdpPort );
                 try{
                     clientHandler.udpSocket.send(packet);
                 }catch(Exception e){

@@ -173,9 +173,10 @@ public class Client {
                 while(true){
                     try {
                         udpSocket.receive(packet);
-                        ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData());
-                        ObjectInputStream objStream = new ObjectInputStream(byteStream);
-                        World periphery = (World) objStream.readObject();
+//                        ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData());
+//                        ObjectInputStream objStream = new ObjectInputStream(byteStream);
+//                        World periphery = (World) objStream.readObject();
+                        World periphery = World.decodeBytes(buffer);
                         for(Kirby kirby:periphery.getKirbies()){
                             kirby.initializeColor();
                         }
@@ -189,9 +190,10 @@ public class Client {
 //                        System.out.println(periphery.kirbies);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
-                    } catch (ClassNotFoundException e) {
-                        throw new RuntimeException(e);
                     }
+//                    catch (ClassNotFoundException e) {
+//                        throw new RuntimeException(e);
+//                    }
 
                     // Deserialize the received data into an object
 

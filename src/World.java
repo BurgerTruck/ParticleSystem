@@ -2,10 +2,7 @@ import com.sun.javafx.image.ByteToBytePixelConverter;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 public class World implements Serializable {
     private ArrayList<Particle> particles;
@@ -85,6 +82,46 @@ public class World implements Serializable {
     public byte[] toBytes(){
         int particlesSize = particles.size()    ;
         int kirbySize = kirbies.size();
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + particlesSize * Position.numBytes() + kirbySize * (Integer.BYTES + ) )
+        //Size of particles -> particles -> Size of hashmap -> Each entry in hashmap
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES + particlesSize * Particle.numBytes() +Integer.BYTES +  kirbySize * (Integer.BYTES + Kirby.numBytes() ) );
+        buffer.putInt(particlesSize );
+        for(int i = 0; i < particlesSize; i++){
+            buffer.put(particles.get(i).toBytes());
+        }
+        buffer.putInt(kirbySize );
+        Set<Map.Entry<Integer, Kirby>> entries = kirbies.entrySet();
+        for(Map.Entry<Integer, Kirby> entry: entries){
+            buffer.putInt(entry.getKey());
+            buffer.put(entry.getValue().toBytes()   );
+        }
+
+        return buffer.array();
+    }
+
+    public static World decodeBytes(byte[] bytes){
+        ByteBuffer buffer = ByteBuffer.wrap(bytes   );
+        int numParticles = buffer.getInt();
+        ArrayList<Particle >  particles = new ArrayList<>(  );
+        for(int i = 0; i < numParticles; i++){
+            byte[] pBuffer = new byte[Particle.numBytes()];
+            buffer.get(pBuffer  );
+            Particle particle = Particle.decodeBytes(pBuffer);
+            particles.add(particle  );
+        }
+
+        HashMap<Integer, Kirby> kirbies = new HashMap<>(    );
+
+        int numKirbies = buffer.getInt()    ;
+        for(int i= 0; i < numKirbies; i++){
+            int id = buffer.getInt()    ;
+
+            byte[] kirbyBuffer = new byte[Kirby.numBytes()];
+            buffer.get(kirbyBuffer);
+            Kirby kirby = Kirby.decodeBytes(kirbyBuffer );
+
+            kirbies.put(id, kirby);
+        }
+        World ret = new World(particles, kirbies    );
+        return ret;
     }
 }

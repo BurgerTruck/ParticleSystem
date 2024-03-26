@@ -30,4 +30,11 @@ public class Position implements Serializable
     public static int numBytes(){
         return 2*Double.BYTES;
     }
+
+    public static Position decodeBytes(byte[] bytes){
+        ByteBuffer buffer = ByteBuffer.wrap(bytes   );
+        double x= buffer.getDouble();
+        double y = buffer.getDouble();
+        return new Position(x, y);
+    }
 }

@@ -45,4 +45,15 @@ public class Particle implements Serializable {
         }
 
     }
+
+    public static int numBytes(){
+        return Position.numBytes();
+    }
+    public byte[] toBytes(){
+        return p.toBytes();
+    }
+
+    public static Particle decodeBytes(byte[] bytes     ){
+        return new Particle(Position.decodeBytes(bytes), 0, 0   );
+    }
 }
