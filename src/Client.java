@@ -1,3 +1,4 @@
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.*;
 import java.net.DatagramPacket;
@@ -52,7 +53,7 @@ public class Client {
                             controller.updateInput(message.clientId, movementMessage.input);
                             break;
                         case JOIN:
-                            world.addKirby(message.clientId, new Kirby());
+                            world.addKirby(message.clientId, new Kirby(((JoinMessage)message).joinColor));
                             break;
                         case DISCONNECT:
                             world.removeKirby(message.clientId);
@@ -104,8 +105,16 @@ public class Client {
 
         System.out.println("SERVER UDP PORT: "+udpSendPort);
         //client gets newly created kirby from server
+
+        JoinMessage joinMessage = (JoinMessage) in.readObject();
+
+        for (Kirby kirby: world.getKirbies()){
+            kirby.initializeColor();
+        }
+        controller.world.addKirby(id, new Kirby(joinMessage.joinColor));
         controller.setPlayerKirby(world.getKirby(id));
         controller.start();
+
         startUdpListeningThread();
         startHeartbeatThread();
         startTcpListeningThread();

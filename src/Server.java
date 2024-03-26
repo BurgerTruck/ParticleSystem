@@ -1,6 +1,8 @@
+import java.awt.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.List;
 
 public class Server{
     public static final int CLIENT_TIMEOUT = Client.HEARTBEAT_INTERVAL * 5;
@@ -14,7 +16,6 @@ public class Server{
     private ServerController serverController;
     private GUI serverGUI;
     private LinkedList<Message> messageQueue;
-    private DatagramSocket FUCKYOU;
     private class ServerController extends Controller{
         @Override
         public void update() {
@@ -38,7 +39,6 @@ public class Server{
     }
     public Server() throws IOException {
         messageQueue = new LinkedList<>();
-        FUCKYOU = new DatagramSocket();
         serverController = new ServerController() ;
         serverWorld = new World(serverController);
         serverGUI = new GUI(serverController);
@@ -59,12 +59,18 @@ public class Server{
                         System.out.println("CONNECTION RECEIVED");
                         int clientId = currId++;
                         Client newClient = new Client(clientId);
-                        ClientHandler handler = new ClientHandler(newClient, clientSocket  );
-                        Kirby clientKirby = new Kirby() ;
+
+                        Color newColor = null;
+                        if(!serverWorld.getKirbies().isEmpty()){
+                            newColor = Color.getHSBColor((float) Math.random(), 0.75f, 1f );
+                        }
+                        ClientHandler handler = new ClientHandler(newClient, clientSocket, newColor);
+                        Kirby clientKirby = new Kirby(newColor) ;
                         serverWorld.addKirby(clientId, clientKirby);
                         clients.add(handler);
                         handler.start();
-                        broadcastMessageTCP(handler, new Message(clientId, Message.MessageType.JOIN));
+
+                        broadcastMessageTCP(handler, new JoinMessage(clientId, newColor));
                         //server sends world with new kirby to client
 
                     } catch (IOException e) {
@@ -84,7 +90,8 @@ public class Server{
         private boolean isConnected;
         private DatagramSocket udpSocket;
         private InetAddress clientAddress;
-        public ClientHandler(Client client, Socket socket) throws IOException {
+        private Color clientColor;
+        public ClientHandler(Client client, Socket socket, Color clientColor) throws IOException {
             this.client = client;
             this.socket = socket;
             clientAddress = socket.getInetAddress();
@@ -92,6 +99,7 @@ public class Server{
             this.in = new ObjectInputStream(socket.getInputStream());
             isConnected = true;
             udpSocket = new DatagramSocket();
+            this.clientColor = clientColor;
             System.out.println("ADDED CLIENT UDP SOCKET ON: "+udpSocket.getLocalSocketAddress());
         }
 
@@ -104,8 +112,9 @@ public class Server{
                 out.writeInt(client.id);
                 out.writeObject(serverWorld);
                 out.writeInt(udpSocket.getLocalPort());
+                out.writeObject(new JoinMessage(client.id, clientColor));
                 out.flush();
-//                udpSocket.setSoTimeout(CLIENT_TIMEOUT);
+                udpSocket.setSoTimeout(CLIENT_TIMEOUT);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
