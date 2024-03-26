@@ -70,7 +70,11 @@ public class CanvasPanel extends JPanel {
         drawRectangle(p.p, bufferGraphics[bufferGraphicsIndex], halfWidth, halfHeight );
     }
     private void fillRect(int x, int y, int width, int height, Graphics2D g){
-
+        System.out.println(x);
+        System.out.println(y);
+        System.out.println(width);
+        System.out.println(height);
+        System.out.println();
         g.fillRect(x, y, width, height);
     }
     public void drawFrontBuffer(){
@@ -89,9 +93,9 @@ public class CanvasPanel extends JPanel {
         x = x-halfWidth;
         y = y - halfHeight;
 
+
         if(x >=GUI.canvasWidth || endX < 0 || y >=GUI.canvasHeight || endY < 0)
             return false;
-
         endX = clamp(endX, 0, GUI.canvasWidth-1);
         endY = clamp(endY, 0, GUI.canvasHeight-1);
         x = clamp(x, 0, GUI.canvasWidth-1);
@@ -116,7 +120,6 @@ public class CanvasPanel extends JPanel {
             }
             if(countFilled == 9 )return false   ;
         }
-
         fillRect(x, y, width, height, g);
 
         return true;
@@ -185,7 +188,7 @@ public class CanvasPanel extends JPanel {
         double x = kirby.getX();
         double y = kirby.getY();
         if(!controller.inViewBox( x,  y, Config.halfKirbyWidth, Config.halfKirbyHeight)) return;
-        System.out.println("DRAWING KIRBY");
+//        System.out.println("DRAWING KIRBY");
         int[] localPosition = controller.transformLocalPosition(x, y);
         int drawX = localPosition[0];
         int drawY = localPosition[1];

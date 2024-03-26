@@ -39,8 +39,16 @@ public class Server{
                 ArrayList<Particle> peripheryParticles = new ArrayList<>(   );
                 HashMap<Integer, Kirby> peripheryKirbies = new HashMap<>(   );
 
-                for(Particle p: world.getParticles()){
+//                for(Particle p: world.getParticles()){
+//
+//
+//                }
+                for(int i = 0; i < world.getParticles().size(); i++){
+                    Particle p = world.getParticles().get(i);
                     if(Controller.inViewBox(kirbyPosition, p.p, Config.halfParticleWidth, Config.halfParticleHeight     )){
+//                        System.out.println(p.p);
+//                        System.out.println(kirbyPosition);
+//                        System.out.println();
                         peripheryParticles.add(p    );
                     }
                 }

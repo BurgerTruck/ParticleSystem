@@ -27,7 +27,7 @@ public class Controller implements Runnable{
 //        updateViewBox();
     }
 
-    private double getElapsed(){
+    protected double getElapsed(){
         long curr = System.nanoTime();
 
         double elapsed =   (curr - prevStart) / 1000000000d;
@@ -76,10 +76,22 @@ public class Controller implements Runnable{
 
         double x = entityPosition.x;
         double y = entityPosition.y;
+
+
         if(x + halfWidth < bottomLeftX-1) return false;
+
         if(x - halfWidth> topRightX+1) return false;
+
         if(y + halfHeight < bottomLeftY-1) return false;
         if(y - halfHeight > topRightY+1) return false;
+
+        System.out.println(bottomLeftX);
+        System.out.println(bottomLeftY);
+        System.out.println(topRightX);
+        System.out.println(topRightY);
+        System.out.println(x);
+        System.out.println(y);
+        System.out.println();
         return true;
     }
     public void keyInput(KeyEvent e, boolean pressed){

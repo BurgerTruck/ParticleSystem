@@ -15,7 +15,6 @@ public class Client {
 
     int id;
     private ClientController controller  ;
-    private World world;
     private GUI gui;
     private Socket tcpSocket;
     private DatagramSocket udpSocket;
@@ -42,11 +41,18 @@ public class Client {
                 }
             }
         }
+
+        @Override
+        protected double getElapsed() {
+            return 0;
+        }
+
         @Override
         public void update() throws IOException {
             canvas.clearBackBuffer();
+
+            if(controller.world!=null)controller.world.update(getElapsed());
             canvas.drawFrontBuffer();
-//            world.update();
             try {
                 SwingUtilities.invokeAndWait(new Runnable() {
                     @Override
@@ -73,7 +79,6 @@ public class Client {
     public Client(int id) {
         this.id = id;
         controller = null;
-        world = null;
         gui = null;
     }
 
@@ -100,6 +105,7 @@ public class Client {
         out.flush();
         int id = in.readInt();
         System.out.println("CLIENT ID: "+id);
+
         setId(id);
         udpSendPort  = in.readInt();
         System.out.println("SERVER UDP PORT: "+udpSendPort);
@@ -171,12 +177,14 @@ public class Client {
                         ObjectInputStream objStream = new ObjectInputStream(byteStream);
                         World periphery = (World) objStream.readObject();
                         controller.setWorld(periphery);
+                        periphery.setController(controller);
                         for(Kirby kirby:periphery.getKirbies()){
                             kirby.initializeColor();
                         }
                         Kirby playerKirby = periphery.getKirby(id   );
                         controller.setPlayerKirby(playerKirby);
                         controller.updateViewBox();
+                        System.out.println(periphery.getParticles());
 //                        System.out.println(periphery.kirbies);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
