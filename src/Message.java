@@ -2,7 +2,7 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     public enum MessageType{
-        JOIN, DISCONNECT, MOVE, HEARTBEAT
+        JOIN, DISCONNECT, MOVE, HEARTBEAT, REQUEST
     }
 
     public int clientId;

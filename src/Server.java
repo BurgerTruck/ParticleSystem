@@ -21,6 +21,7 @@ public class Server{
     private class ServerController extends Controller{
         @Override
         public void update() throws IOException, InterruptedException {
+            LinkedList<Thread> peripheryThreads = new LinkedList<>();
             synchronized (messageQueue){
                 while(!messageQueue.isEmpty()){
                     Message message = messageQueue.poll();
@@ -28,69 +29,67 @@ public class Server{
                         case MOVE:
                             serverController.updateInput(message.clientId, ((MovementMessage)message).input);
                             break;
+                        case REQUEST:
+                            ClientHandler clientHandler = clients.get(message.clientId);
+                            int id = clientHandler.client.id;
+                            Kirby kirby = serverWorld.getKirby(id );
+                            Position kirbyPosition = kirby.getPosition();
+                            peripheryThreads.add(new Thread(() -> {
+                                List<Particle> peripheryParticles = new ArrayList<>();
+                                HashMap<Integer, Kirby> peripheryKirbies = new HashMap<>(   );
+
+
+                                peripheryParticles =  serverWorld.getParticles().stream().parallel().filter(p -> Controller.inViewBox(kirbyPosition, p.p, Config.halfParticleWidth, Config.halfParticleHeight)).collect(Collectors.toList());
+                                for(Map.Entry<Integer, Kirby> entry: serverWorld.kirbies.entrySet()){
+                                    Kirby k = entry.getValue();
+                                    int entryId = entry.getKey();
+                                    if(Controller.inViewBox(kirbyPosition, k.getPosition(), Config.halfKirbyWidth, Config.halfKirbyHeight     )){
+                                        peripheryKirbies.put(entryId, k   );
+                                    }
+                                }
+
+                                World periphery = new World(peripheryParticles, peripheryKirbies    );
+                                int[] maxLength = new int[1];
+                                byte[][] peripheryBytes = periphery.toBytes(maxLength);
+                                int numPackets = peripheryBytes.length;
+
+
+                                try {
+                                    long startTime = System.nanoTime();
+                                    clientHandler.out.writeInt(numPackets);
+                                    clientHandler.out.writeInt(maxLength[0]);
+//                        System.out.println(numPackets);
+                                    clientHandler.out.flush();
+
+                                    long endTime = System.nanoTime()    ;
+                                    System.out.println("TIME: "+(endTime - startTime)/1e9f);
+                                } catch (SocketException e){
+                                    disconnectClient(clientHandler);
+                                    System.out.println("LOST CONNECTION WITH: "+id);
+                                } catch (IOException e) {
+                                    System.out.println(e.getMessage());
+                                }
+                                for(int i = 0; i < numPackets; i++){
+
+                                    byte[] bytes = peripheryBytes[i];
+                                    DatagramPacket packet = new DatagramPacket(bytes, bytes.length, clientHandler.clientAddress, clientHandler.clientUdpPort );
+                                    try{
+                                        clientHandler.udpSocket.send(packet);
+//                                        Thread.sleep(1);
+                                    }catch(Exception e){
+                                        System.out.println(e.getMessage());
+                                    }
+                                    System.out.println(i);
+                                }
+                            }));
+                            peripheryThreads.getLast().start();
                     }
                 }
             }
-
-            super.update();
-            LinkedList<Thread> threads = new LinkedList<>();
-
-            for(int i = 0; i < clients.size(); i++){
-                ClientHandler clientHandler = clients.get(i);
-                if(!clientHandler.isConnected) continue;
-                int id = clientHandler.client.id;
-                Kirby kirby = serverWorld.getKirby(id );
-                if(kirby==null)continue;
-
-                threads.add(new Thread(() -> {
-
-                    Position kirbyPosition = kirby.getPosition();
-                    ArrayList<Particle> peripheryParticles = new ArrayList<>(   );
-                    HashMap<Integer, Kirby> peripheryKirbies = new HashMap<>(   );
-
-                    peripheryParticles.addAll(world.getParticles().stream().parallel().filter(p -> Controller.inViewBox(kirbyPosition, p.p, Config.halfParticleWidth, Config.halfParticleHeight)).collect(Collectors.toList()));
-
-                    for(Map.Entry<Integer, Kirby> entry: world.kirbies.entrySet()){
-                        Kirby k = entry.getValue();
-                        int entryId = entry.getKey();
-                        if(Controller.inViewBox(kirbyPosition, k.getPosition(), Config.halfKirbyWidth, Config.halfKirbyHeight     )){
-                            peripheryKirbies.put(entryId, k   );
-                        }
-                    }
-
-//                    System.out.println(periphery.getParticles());
-//                DatagramPacket packet = MessageHelper.createUdpPacket(periphery, clientHandler.clientAddress, clientHandler.clientUdpPort);
-                    World periphery = new World(peripheryParticles, peripheryKirbies    );
-                    int[] maxLength = new int[1];
-                    byte[][] peripheryBytes = periphery.toBytes(maxLength);
-                    int numPackets = peripheryBytes.length;
-
-                    try {
-                        clientHandler.out.writeInt(numPackets);
-                        clientHandler.out.writeInt(maxLength[0]);
-                        System.out.println(numPackets);
-                        clientHandler.out.flush();
-                    } catch (SocketException e){
-                        clientHandler.isConnected = false;
-                        serverWorld.removeKirby(clientHandler.client.id);
-                        System.out.println("LOST CONNECTION WITH: "+clientHandler.client.id);
-                    } catch (IOException e) {
-                        System.out.println(e.getMessage());
-                    }
-                    for(byte[] bytes: peripheryBytes){
-                        DatagramPacket packet = new DatagramPacket(bytes, bytes.length, clientHandler.clientAddress, clientHandler.clientUdpPort );
-                        try{
-                            clientHandler.udpSocket.send(packet);
-                        }catch(Exception e){
-                            System.out.println(e.getMessage());
-                        }
-                    }
-                }));
-                threads.getLast().start();
-            }
-            for(Thread thread: threads){
+            for(Thread thread: peripheryThreads){
                 thread.join();
             }
+            super.update();
         }
 
         @Override
@@ -136,6 +135,7 @@ public class Server{
                         //server sends world with new kirby to client
 
                     } catch (IOException e) {
+
                         throw new RuntimeException(e);
                     }
                 }
@@ -146,8 +146,8 @@ public class Server{
     class ClientHandler extends Thread{
         private Client client;
         private Socket socket;
-        private ObjectOutputStream out;
-        private ObjectInput in;
+        private DataOutputStream out;
+        private DataInputStream in;
         private int clientUdpPort;
         private boolean isConnected;
         private DatagramSocket udpSocket;
@@ -157,12 +157,20 @@ public class Server{
             this.client = client;
             this.socket = socket;
             clientAddress = socket.getInetAddress();
-            this.out = new ObjectOutputStream(socket.getOutputStream());
-            this.in = new ObjectInputStream(socket.getInputStream());
+            this.out = new DataOutputStream(socket.getOutputStream());
+            this.in = new DataInputStream(socket.getInputStream());
             isConnected = true;
             udpSocket = new DatagramSocket();
+//            try {
+//                udpSocket.setSendBufferSize(65000*4);
+//                udpSocket.setTrafficClass(0x04);
+//            } catch (SocketException e) {
+//                throw new RuntimeException(e);
+//            }
             this.clientColor = clientColor;
             System.out.println("ADDED CLIENT UDP SOCKET ON: "+udpSocket.getLocalSocketAddress());
+            socket.setTcpNoDelay(true);
+            socket.setSendBufferSize(16);
         }
         private void connect(){
             try {
@@ -181,6 +189,25 @@ public class Server{
         }
         @Override
         public void run() {
+            Thread thread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while(true){
+                        try {
+                            in.readBoolean();
+//                            System.out.println("RECEIVED REQUEST FROM: "+client.id);
+                            synchronized (messageQueue){
+                                messageQueue.add(new Message(client.id, Message.MessageType.REQUEST));
+                            }
+                        } catch (IOException e) {
+                            disconnectClient(ClientHandler.this);
+//                            throw new RuntimeException(e);
+                        }
+                    }
+
+                }
+            });
+            thread.start();
             while(true){
                 try {
                     byte[] buffer = new byte[512];
@@ -214,6 +241,10 @@ public class Server{
 
         }
 
+    }
+    private void disconnectClient(ClientHandler clientHandler){
+        clientHandler.isConnected = false;
+        serverWorld.removeKirby(clientHandler.client.id);
     }
     public static void main(String[] args) throws IOException {
         Server server= new Server() ;

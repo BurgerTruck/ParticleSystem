@@ -3,12 +3,12 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 public class World implements Serializable {
-    private ArrayList<Particle> particles;
+    private List<Particle> particles;
     public  HashMap<Integer, Kirby> kirbies;
     private transient Controller controller;
     private static  Thread[] threads = new Thread[Config.NUM_THREADS];
 
-    public World(ArrayList<Particle> particles, HashMap<Integer, Kirby> kirbies){
+    public World(List<Particle> particles, HashMap<Integer, Kirby> kirbies){
         this.particles = particles;
         this.kirbies = kirbies;
     }
@@ -19,7 +19,7 @@ public class World implements Serializable {
         setController(controller);
     }
 
-    public ArrayList<Particle> getParticles() {
+    public List<Particle> getParticles() {
         return particles;
     }
 
