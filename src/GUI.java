@@ -17,6 +17,7 @@ public class GUI extends JFrame {
     private CanvasPanel canvas;
     private JToggleButton explorerModeButton;
     private Controller controller;
+    private JPanel sidePanel;
 
     public GUI(Controller controller){
         this.setSize((int) (1.25*canvasWidth), (int) (1.1*canvasHeight));
@@ -37,21 +38,24 @@ public class GUI extends JFrame {
         }
 
         canvas = new CanvasPanel(canvasWidth, canvasHeight);
+
+        sidePanel = new JPanel();
+        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
         setController(controller);
         controller.setCanvas(canvas);
-        initPointPanel();
-        initBatchPanel();
-        initExplorerButton();
 
-        JPanel sidePanel = new JPanel();
-        sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.Y_AXIS));
-        addPointPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        sidePanel.add(addPointPanel);
+
+
+
+
+
+        initPointPanel();
         sidePanel.add(Box.createVerticalStrut(20));
+        initBatchPanel();
         sidePanel.add(Box.createVerticalStrut(20));
-        sidePanel.add(addBatchPanel);
+        initExplorerButton();
         sidePanel.add(Box.createVerticalStrut(20));
-        sidePanel.add(explorerModeButton);
+
 
         JPanel mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.X_AXIS));
@@ -66,7 +70,7 @@ public class GUI extends JFrame {
 
     }
 
-    private void initPointPanel(){
+    protected void initPointPanel(){
         addPointPanel = new JPanel();
         addPointPanel.setLayout(new BoxLayout(addPointPanel, BoxLayout.Y_AXIS));
 
@@ -95,12 +99,12 @@ public class GUI extends JFrame {
             controller.addParticle(particle);
         });
         addPointPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Particle"));
-
-
+        addPointPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        sidePanel.add(addPointPanel);
     }
 
 
-    private void initBatchPanel(){
+    protected void initBatchPanel(){
         addBatchPanel = new JPanel();
         addBatchPanel.setLayout(new BoxLayout(addBatchPanel, BoxLayout.Y_AXIS));
 
@@ -166,28 +170,30 @@ public class GUI extends JFrame {
             }
         });
         addBatchPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED), "Add Batch"));
+        sidePanel.add(addBatchPanel);
     }
-    private void initExplorerButton(){
-         explorerModeButton = new JToggleButton("Explorer Mode", false);
-         explorerModeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
-         explorerModeButton.addChangeListener(new ChangeListener() {
-             @Override
-             public void stateChanged(ChangeEvent e) {
-                 controller.setExplorer(explorerModeButton.isSelected());
-                 if(explorerModeButton.isSelected()){
-                     addPointPanel.setVisible(false);
-                     addBatchPanel.setVisible(false);
+    protected void initExplorerButton(){
+        explorerModeButton = new JToggleButton("Explorer Mode", false);
+        explorerModeButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        explorerModeButton.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                controller.setExplorer(explorerModeButton.isSelected());
+                if(explorerModeButton.isSelected()){
+                    addPointPanel.setVisible(false);
+                    addBatchPanel.setVisible(false);
 //                     pack();
-                 }else{
-                     addPointPanel.setVisible(true);
-                     addBatchPanel.setVisible(true);
+                }else{
+                    addPointPanel.setVisible(true);
+                    addBatchPanel.setVisible(true);
 //                     pack();
-                 }
+                }
 //                 canvas.requestFocus();
 //                 canvas.resetHeldKeys();
-             }
-         });
-         explorerModeButton.setFocusable(false);
+            }
+        });
+        explorerModeButton.setFocusable(false);
+        sidePanel.add(explorerModeButton);
     }
 
     public CanvasPanel getCanvas() {

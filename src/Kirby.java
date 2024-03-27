@@ -32,12 +32,11 @@ public class Kirby implements Serializable {
 
     private Color color;
     private transient BufferedImage tintedSheet;
-    public boolean wHeld = false;
-    public boolean aHeld = false;
-    public boolean sHeld = false;
-    public boolean dHeld = false;
+    public transient boolean wHeld = false;
+    public transient boolean aHeld = false;
+    public transient boolean sHeld = false;
+    public transient boolean dHeld = false;
     private boolean horizontalFlipped = false;
-    private BufferedImage spriteImage;
     static{
         try {
             SPRITE_SHEET = ImageIO.read((Kirby.class.getResource("kirby_what.png")));
@@ -274,5 +273,16 @@ public class Kirby implements Serializable {
 //        System.out.println(ret.isWalking);
 //        System.out.println();
         return ret;
+    }
+
+    public Color getColor() {
+        return color;
+    }
+
+    @Override
+    public String toString() {
+        return "Kirby{" +
+                "p=" + p +
+                '}';
     }
 }

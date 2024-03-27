@@ -3,13 +3,13 @@ import java.util.ArrayList;
 
 public class Particle implements Serializable {
     Position p;
-    Position prev;
+    transient Position prev;
 
-    double speed; //pixels/s
-    double angle;
+    transient double speed; //pixels/s
+    transient double angle;
 
-    private double dx;
-    private double dy;
+    private transient double dx;
+    private transient double dy;
 
     public Particle(Position p, double speed, double a) {
         this.p = p;
@@ -46,13 +46,21 @@ public class Particle implements Serializable {
 
     }
 
+
+
+
+    @Override
+    public String toString() {
+        return "Particle{" +
+                "p=" + p +
+                '}';
+    }
     public static int numBytes(){
         return Position.numBytes();
     }
     public byte[] toBytes(){
         return p.toBytes();
     }
-
     public static Particle decodeBytes(byte[] bytes     ){
         return new Particle(Position.decodeBytes(bytes), 0, 0   );
     }

@@ -38,6 +38,8 @@ public class Config {
     public static final Position[] rightBoundRect;
     public static final Position[] bottomBoundRect;
 
+
+    public static final int NUM_PARTICLES_PER_PACKET = 4000;
     static{
         if((eKirbyWidth&1)==0) eKirbyWidth++;
         eKirbyHeight = eKirbyWidth;

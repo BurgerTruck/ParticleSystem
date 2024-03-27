@@ -7,6 +7,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.BufferUnderflowException;
 import java.util.LinkedList;
 import java.util.Objects;
 
@@ -24,6 +25,27 @@ public class Client {
     private ObjectInputStream in;
 
     public static final String serverAddress = "localhost";
+
+    private class ClientGUI extends GUI{
+        public ClientGUI(Controller controller) {
+            super(controller);
+        }
+
+        @Override
+        protected void initPointPanel() {
+
+        }
+
+        @Override
+        protected void initBatchPanel() {
+
+        }
+
+        @Override
+        protected void initExplorerButton() {
+
+        }
+    }
     private class ClientController extends Controller{
         @Override
         public void keyInput(KeyEvent e, boolean pressed) {
@@ -70,7 +92,6 @@ public class Client {
             } catch (InterruptedException | InvocationTargetException e) {
                 throw new RuntimeException(e);
             }
-            frames++;
         }
 
         @Override
@@ -94,9 +115,8 @@ public class Client {
     private Client(){
         messageQueue = new LinkedList<>();
         this.controller = new ClientController();
-        gui = new GUI(controller);
-
-
+        gui = new ClientGUI(controller);
+        gui.setSize(new Dimension(GUI.canvasWidth, GUI.canvasHeight));
     }
 
     public void setId(int id) {
@@ -120,9 +140,8 @@ public class Client {
         System.out.println("SERVER UDP PORT: "+udpSendPort);
         //client gets newly created kirby from server
         controller.start();
-
         startUdpListeningThread();
-        startHeartbeatThread();
+//        startHeartbeatThread();
     }
     private void startHeartbeatThread(){
         Thread thread=  new Thread(new Runnable() {
@@ -151,38 +170,50 @@ public class Client {
         });
         thread.start();
     }
+
     private void startUdpListeningThread(){
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                byte[] buffer = new byte[32356];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 while(true){
                     try {
-                        udpSocket.receive(packet);
-//                        ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData());
-//                        ObjectInputStream objStream = new ObjectInputStream(byteStream);
-//                        World periphery = (World) objStream.readObject();
-                        World periphery = World.decodeBytes(buffer);
-//                        System.out.println(periphery.getParticles());
-                        Kirby playerKirby = periphery.getKirby(id   );
-                        synchronized (controller){
-                            controller.setPlayerKirby(playerKirby);
-                            controller.updateViewBox();
-                            controller.setWorld(periphery);
+
+                        int numPackets = in.readInt();
+                        int length = in.readInt();
+
+                        byte[][] buffer = new byte[numPackets][length];
+
+                        udpSocket.setReceiveBufferSize(500);
+                        for(int i = 0; i < numPackets; i++){
+                            DatagramPacket packet = new DatagramPacket(buffer[i], length);
+                            udpSocket.receive(packet);
                         }
 
-//                        System.out.println(periphery.getParticles());
-//                        System.out.println(periphery.kirbies);
+
+                        World periphery = null;
+                        Kirby playerKirby = null;
+                        try{
+                            System.out.println(numPackets);
+
+                            periphery = World.decodeBytes(buffer);
+
+                            playerKirby = periphery.getKirby(id   );
+                        }catch (BufferUnderflowException e){
+                            System.out.println(e);
+                        }
+//                            System.out.println(periphery.getParticles());
+                            synchronized (controller){
+                                if (playerKirby != null) {
+                                    controller.setPlayerKirby(playerKirby);
+                                    controller.updateViewBox();
+                                    controller.frames++;
+                                }
+                                if(periphery!=null) controller.setWorld(periphery);
+                            }
+
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-//                    catch (ClassNotFoundException e) {
-//                        throw new RuntimeException(e);
-//                    }
-
-                    // Deserialize the received data into an object
-
                 }
             }
         });
@@ -195,8 +226,9 @@ public class Client {
                 try {
                     Input input=  new Input(controller.iswHeld(), controller.isaHeld(),controller.issHeld(),controller.isdHeld() );
                     DatagramPacket packet = MessageHelper.createUdpPacket(new MovementMessage(id, input),
-                             tcpSocket.getInetAddress(), udpSendPort);
+                            tcpSocket.getInetAddress(), udpSendPort);
                     udpSocket.send(packet);
+
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
