@@ -162,9 +162,10 @@ public class Controller implements Runnable{
         if(playerKirby!=null) playerKirby.updateDirectionsHeld(wHeld, aHeld,sHeld, dHeld);
 
         world.update(getElapsed());
+        updateViewBox();
         canvas.drawParticles();
         canvas.drawKirbies();
-        updateViewBox();
+
         canvas.drawFrontBuffer();
 
         try {

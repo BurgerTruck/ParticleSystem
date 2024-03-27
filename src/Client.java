@@ -7,6 +7,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.nio.BufferUnderflowException;
 import java.util.LinkedList;
 import java.util.Objects;
 
@@ -122,7 +123,7 @@ public class Client {
         controller.start();
 
         startUdpListeningThread();
-        startHeartbeatThread();
+//        startHeartbeatThread();
     }
     private void startHeartbeatThread(){
         Thread thread=  new Thread(new Runnable() {
@@ -155,26 +156,54 @@ public class Client {
         Thread thread = new Thread(new Runnable() {
             @Override
             public void run() {
-                byte[] buffer = new byte[32356];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
                 while(true){
                     try {
-                        udpSocket.receive(packet);
-//                        ByteArrayInputStream byteStream = new ByteArrayInputStream(packet.getData());
-//                        ObjectInputStream objStream = new ObjectInputStream(byteStream);
-//                        World periphery = (World) objStream.readObject();
-                        World periphery = World.decodeBytes(buffer);
-//                        System.out.println(periphery.getParticles());
+//                        int numPackets = in.readInt();
+//                        int length = in.readInt();
+//                        byte[][] buffer = new byte[numPackets][length];
+//                        for(int i = 0; i < numPackets; i++){
+//                            DatagramPacket packet = new DatagramPacket(buffer[i], length);
+//                            udpSocket.receive(packet);
+//                        }
+//                        try{
+//                            World periphery = World.decodeBytes(buffer);
+//                            Kirby playerKirby = periphery.getKirby(id   );
+//                            synchronized (controller){
+//                                if(playerKirby==null){
+//                                    controller.updateViewBox();
+//                                    controller.setWorld(periphery);
+//                                }else{
+//                                    controller.setPlayerKirby(playerKirby);
+//                                    controller.updateViewBox();
+//                                    controller.setWorld(periphery);
+//                                }
+//
+//                            }
+//                        }catch (BufferUnderflowException e){
+//                            System.out.println(e);
+//                        }
+                        World periphery = (World) in.readObject();
                         Kirby playerKirby = periphery.getKirby(id   );
                         synchronized (controller){
                             controller.setPlayerKirby(playerKirby);
                             controller.updateViewBox();
                             controller.setWorld(periphery);
-                        }
 
+//                            if(playerKirby==null){
+//                                controller.updateViewBox();
+//                                controller.setWorld(periphery);
+//                            }else{
+//                                controller.setPlayerKirby(playerKirby);
+//                                controller.updateViewBox();
+//                                controller.setWorld(periphery);
+//                            }
+                        }
 //                        System.out.println(periphery.getParticles());
 //                        System.out.println(periphery.kirbies);
                     } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    } catch (ClassNotFoundException e) {
                         throw new RuntimeException(e);
                     }
 //                    catch (ClassNotFoundException e) {

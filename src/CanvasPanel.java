@@ -195,7 +195,8 @@ public class CanvasPanel extends JPanel {
         if(controller.isExplorer()){
             kirby.drawSprite(g, drawX - halfWidth, drawX + halfWidth,drawY - halfHeight, drawY + halfHeight );
         }else{
-            g.setColor(Color.decode("#eb81a6"));
+            if(kirby.getColor()==null) g.setColor(Color.decode("#eb81a6"));
+            else g.setColor(kirby.getColor());
             fillRect(drawX - halfWidth, drawY - halfHeight, Config.kirbyWidth, Config.kirbyHeight, g);
         }
 
@@ -214,6 +215,7 @@ public class CanvasPanel extends JPanel {
         for (int i = 0; i < Config.NUM_THREADS; i++) {
             if(i >=controller.getParticles().size()) break;
             int finalI = i;
+            bufferGraphics[finalI].setColor(Color.BLACK);
             threads[i] = new Thread(() -> {
                 for (int j = finalI; j < controller.getParticles().size(); j += Config.NUM_THREADS) {
                     Particle particle = controller.getParticles().get(j);
@@ -222,10 +224,10 @@ public class CanvasPanel extends JPanel {
             });
             threads[i].start();
         }
-            for(Thread thread: threads){
-                if(thread==null) break;
-                thread.join();
-            }
+        for(Thread thread: threads){
+            if(thread==null) break;
+            thread.join();
+        }
     }
     public void drawKirbies(){
         for(Kirby kirby: controller.getKirbies()){
